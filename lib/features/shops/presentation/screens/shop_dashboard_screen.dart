@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import '../../../../core/utils/date_fomatter.dart';
+import '../../../../core/services/connectivity_service.dart';
 import '../../data/models/shop_model.dart';
 
 class ShopDashboardScreen extends StatelessWidget {
   final Shop shop;
 
-  const ShopDashboardScreen({super.key, required this.shop});
+  // Initialize the service
+  final ConnectivityService _connectivityService = ConnectivityService();
+
+  ShopDashboardScreen({super.key, required this.shop});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +19,7 @@ class ShopDashboardScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
-        title: const Text("Dashboard", style: TextStyle(color: Colors.black)),
+        title: const Text("Home", style: TextStyle(color: Colors.black)),
       ),
       body: CustomScrollView(
         slivers: [
@@ -29,26 +33,15 @@ class ShopDashboardScreen extends StatelessWidget {
                   style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 20),
-
                 _buildActiveShopCard(),
-
                 const SizedBox(height: 30),
-                const Text(
-                  "Quick Actions",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const Text(
-                  "Access all features from one place",
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
-                ),
+                const Text("Quick Actions", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text("Access all features from one place", style: TextStyle(color: Colors.grey, fontSize: 12)),
                 const SizedBox(height: 20),
-
                 _buildGridActions(),
               ]),
             ),
           ),
-
-          // Footer area that expands to fill the screen
           SliverFillRemaining(
             hasScrollBody: false,
             child: Padding(
@@ -56,7 +49,6 @@ class ShopDashboardScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  // Using our reusable Core Utility
                   _buildFooter(DateFormatter.fullDate),
                 ],
               ),
@@ -68,7 +60,6 @@ class ShopDashboardScreen extends StatelessWidget {
   }
 
   Widget _buildGridActions() {
-    // List of actions to keep the code organized
     final actions = [
       _ActionItem(Icons.grid_view_rounded, "Categories", Colors.teal),
       _ActionItem(Icons.inventory_2_outlined, "Products", Colors.purple),
@@ -183,40 +174,47 @@ class ShopDashboardScreen extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          date,
-          style: const TextStyle(color: Colors.grey, fontSize: 12),
-        ),
-        Row(
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: Colors.green,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.green.withValues(alpha: 0.3),
-                    blurRadius: 4,
-                    spreadRadius: 1,
-                  )
-                ],
-              ),
-            ),
-            const SizedBox(width: 6),
-            const Text(
-              "Connected",
-              style: TextStyle(color: Colors.grey, fontSize: 12),
-            ),
-          ],
+        Text(date, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+
+        // REAULT-TIME CONNECTION STATUS
+        StreamBuilder<NetworkStatus>(
+          stream: _connectivityService.connectivityStream,
+          initialData: NetworkStatus.online,
+          builder: (context, snapshot) {
+            final isOnline = snapshot.data == NetworkStatus.online;
+            final statusColor = isOnline ? Colors.green : Colors.red;
+
+            return Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: statusColor.withValues(alpha: 0.3),
+                        blurRadius: 4,
+                        spreadRadius: 1,
+                      )
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  isOnline ? "Connected" : "No Internet",
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
+            );
+          },
         ),
       ],
     );
   }
 }
 
-// Simple helper class for grid items
 class _ActionItem {
   final IconData icon;
   final String title;
