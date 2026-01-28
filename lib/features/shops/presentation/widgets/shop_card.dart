@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/models/shop_model.dart';
+import '../screens/shop_dashboard_screen.dart';
 import '../screens/shop_detail_screen.dart'; // Import your detail screen
 
 class ShopCard extends StatelessWidget {
@@ -28,7 +29,7 @@ class ShopCard extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ShopDetailScreen(shop: shop),
+              builder: (context) => ShopDashboardScreen(shop: shop),
             ),
           );
         },

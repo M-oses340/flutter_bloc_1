@@ -8,6 +8,8 @@ import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/bloc/auth_event.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -60,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const Icon(Icons.lock_person, size: 80, color: Colors.blue),
                           const SizedBox(height: 20),
                           const Text(
-                            "Login to Shop Manager",
+                            "Omwa Shop Management",
                             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 30),
