@@ -9,7 +9,7 @@ class ShopDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // Light grey background like image
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -33,7 +33,6 @@ class ShopDashboardScreen extends StatelessWidget {
             const Text("Access all features from one place", style: TextStyle(color: Colors.grey, fontSize: 12)),
             const SizedBox(height: 20),
 
-            // The Grid of Actions
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -63,15 +62,19 @@ class ShopDashboardScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F5E9), // Soft green tint
+        color: const Color(0xFFE8F5E9),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.green.withOpacity(0.1)),
+        // UPDATED: withValues for border precision
+        border: Border.all(color: Colors.green.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.teal[400], borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+                color: Colors.teal[400],
+                borderRadius: BorderRadius.circular(12)
+            ),
             child: const Icon(Icons.business, color: Colors.white),
           ),
           const SizedBox(width: 15),
@@ -87,7 +90,10 @@ class ShopDashboardScreen extends StatelessWidget {
           if (shop.isActive)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(20)),
+              decoration: BoxDecoration(
+                  color: Colors.green,
+                  borderRadius: BorderRadius.circular(20)
+              ),
               child: const Row(
                 children: [
                   CircleAvatar(radius: 3, backgroundColor: Colors.white),
@@ -107,7 +113,12 @@ class ShopDashboardScreen extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5)),
+          // UPDATED: withValues for shadow precision
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 5)
+          ),
         ],
       ),
       child: Column(
@@ -115,13 +126,17 @@ class ShopDashboardScreen extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            // UPDATED: withValues for the icon background
+            decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12)
+            ),
             child: Icon(icon, color: color),
           ),
           const SizedBox(height: 12),
           Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
-          Container(width: 20, height: 2, color: color), // Small color accent line
+          Container(width: 20, height: 2, color: color),
         ],
       ),
     );
