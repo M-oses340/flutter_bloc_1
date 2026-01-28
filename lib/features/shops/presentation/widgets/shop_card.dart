@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/shop_model.dart';
 import '../screens/shop_dashboard_screen.dart';
 import '../screens/shop_detail_screen.dart'; // Import your detail screen
@@ -24,8 +25,10 @@ class ShopCard extends StatelessWidget {
           Icons.chevron_right,
           color: shop.isActive ? Colors.green : Colors.grey,
         ),
-        onTap: () {
+        onTap: () async {
           // Navigate to Detail Screen and pass the shop object
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          prefs.setInt("shopId", shop.id);
           Navigator.push(
             context,
             MaterialPageRoute(

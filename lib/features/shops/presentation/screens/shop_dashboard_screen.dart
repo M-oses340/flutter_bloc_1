@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../../core/utils/date_fomatter.dart';
 import '../../../../core/services/connectivity_service.dart';
+import '../../../categories/presentation/screens/categories_screen.dart';
 import '../../data/models/shop_model.dart';
 
 class ShopDashboardScreen extends StatelessWidget {
   final Shop shop;
-
-  // Initialize the service
   final ConnectivityService _connectivityService = ConnectivityService();
 
   ShopDashboardScreen({super.key, required this.shop});
@@ -20,6 +19,17 @@ class ShopDashboardScreen extends StatelessWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
         title: const Text("Home", style: TextStyle(color: Colors.black)),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const CircleAvatar(
+              radius: 14,
+              backgroundColor: Colors.teal,
+              child: Icon(Icons.person, size: 18, color: Colors.white),
+            ),
+          ),
+          const SizedBox(width: 10),
+        ],
       ),
       body: CustomScrollView(
         slivers: [
@@ -38,7 +48,7 @@ class ShopDashboardScreen extends StatelessWidget {
                 const Text("Quick Actions", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const Text("Access all features from one place", style: TextStyle(color: Colors.grey, fontSize: 12)),
                 const SizedBox(height: 20),
-                _buildGridActions(),
+                _buildGridActions(context),
               ]),
             ),
           ),
@@ -59,9 +69,22 @@ class ShopDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildGridActions() {
+  Widget _buildGridActions(BuildContext context) {
     final actions = [
-      _ActionItem(Icons.grid_view_rounded, "Categories", Colors.teal),
+      _ActionItem(
+        Icons.grid_view_rounded,
+        "Categories",
+        Colors.teal,
+        onTap: () {
+          // shop.id is already an int, so just pass it!
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CategoriesScreen(shopId: shop.id),
+            ),
+          );
+        },
+      ),
       _ActionItem(Icons.inventory_2_outlined, "Products", Colors.purple),
       _ActionItem(Icons.monetization_on_outlined, "Expenses", Colors.redAccent),
       _ActionItem(Icons.shopping_cart_checkout, "Make Sale", Colors.green),
@@ -84,7 +107,11 @@ class ShopDashboardScreen extends StatelessWidget {
       itemCount: actions.length,
       itemBuilder: (context, index) {
         final item = actions[index];
-        return _buildActionCard(item.icon, item.title, item.color);
+        return InkWell(
+          onTap: item.onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: _buildActionCard(item.icon, item.title, item.color),
+        );
       },
     );
   }
@@ -175,37 +202,20 @@ class ShopDashboardScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(date, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-
-        // REAULT-TIME CONNECTION STATUS
         StreamBuilder<NetworkStatus>(
           stream: _connectivityService.connectivityStream,
           initialData: NetworkStatus.online,
           builder: (context, snapshot) {
             final isOnline = snapshot.data == NetworkStatus.online;
             final statusColor = isOnline ? Colors.green : Colors.red;
-
             return Row(
               children: [
                 Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: statusColor.withValues(alpha: 0.3),
-                        blurRadius: 4,
-                        spreadRadius: 1,
-                      )
-                    ],
-                  ),
+                  width: 8, height: 8,
+                  decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  isOnline ? "Connected" : "No Internet",
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                ),
+                Text(isOnline ? "Connected" : "No Internet", style: const TextStyle(color: Colors.grey, fontSize: 12)),
               ],
             );
           },
@@ -219,5 +229,6 @@ class _ActionItem {
   final IconData icon;
   final String title;
   final Color color;
-  _ActionItem(this.icon, this.title, this.color);
+  final VoidCallback? onTap;
+  _ActionItem(this.icon, this.title, this.color, {this.onTap});
 }
