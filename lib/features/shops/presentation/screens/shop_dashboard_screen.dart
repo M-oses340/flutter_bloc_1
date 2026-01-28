@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/date_fomatter.dart';
 import '../../data/models/shop_model.dart';
 
 class ShopDashboardScreen extends StatelessWidget {
@@ -16,45 +17,84 @@ class ShopDashboardScreen extends StatelessWidget {
         iconTheme: const IconThemeData(color: Colors.black),
         title: const Text("Dashboard", style: TextStyle(color: Colors.black)),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Good Afternoon,", style: TextStyle(color: Colors.grey)),
-            Text(shop.ownerName, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
+      body: CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                const Text("Good Afternoon,", style: TextStyle(color: Colors.grey)),
+                Text(
+                  shop.ownerName,
+                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
 
-            // Active Shop Status Card
-            _buildActiveShopCard(),
+                _buildActiveShopCard(),
 
-            const SizedBox(height: 30),
-            const Text("Quick Actions", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const Text("Access all features from one place", style: TextStyle(color: Colors.grey, fontSize: 12)),
-            const SizedBox(height: 20),
+                const SizedBox(height: 30),
+                const Text(
+                  "Quick Actions",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const Text(
+                  "Access all features from one place",
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                const SizedBox(height: 20),
 
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 3,
-              crossAxisSpacing: 15,
-              mainAxisSpacing: 15,
-              childAspectRatio: 0.85,
-              children: [
-                _buildActionCard(Icons.grid_view_rounded, "Categories", Colors.teal),
-                _buildActionCard(Icons.inventory_2_outlined, "Products", Colors.purple),
-                _buildActionCard(Icons.monetization_on_outlined, "Expenses", Colors.redAccent),
-                _buildActionCard(Icons.shopping_cart_checkout, "Make Sale", Colors.green),
-                _buildActionCard(Icons.credit_card, "Credit Sale", Colors.orange),
-                _buildActionCard(Icons.list_alt_rounded, "All Sales", Colors.indigo),
-                _buildActionCard(Icons.people_alt_outlined, "Customers", Colors.blue),
-                _buildActionCard(Icons.storefront, "Store", Colors.pinkAccent),
-                _buildActionCard(Icons.bar_chart_rounded, "Reports", Colors.deepPurple),
-              ],
+                _buildGridActions(),
+              ]),
             ),
-          ],
-        ),
+          ),
+
+          // Footer area that expands to fill the screen
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  // Using our reusable Core Utility
+                  _buildFooter(DateFormatter.fullDate),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildGridActions() {
+    // List of actions to keep the code organized
+    final actions = [
+      _ActionItem(Icons.grid_view_rounded, "Categories", Colors.teal),
+      _ActionItem(Icons.inventory_2_outlined, "Products", Colors.purple),
+      _ActionItem(Icons.monetization_on_outlined, "Expenses", Colors.redAccent),
+      _ActionItem(Icons.shopping_cart_checkout, "Make Sale", Colors.green),
+      _ActionItem(Icons.credit_card, "Credit Sale", Colors.orange),
+      _ActionItem(Icons.list_alt_rounded, "All Sales", Colors.indigo),
+      _ActionItem(Icons.people_alt_outlined, "Customers", Colors.blue),
+      _ActionItem(Icons.storefront, "Store", Colors.pinkAccent),
+      _ActionItem(Icons.bar_chart_rounded, "Reports", Colors.deepPurple),
+    ];
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 15,
+        mainAxisSpacing: 15,
+        childAspectRatio: 0.85,
+      ),
+      itemCount: actions.length,
+      itemBuilder: (context, index) {
+        final item = actions[index];
+        return _buildActionCard(item.icon, item.title, item.color);
+      },
     );
   }
 
@@ -64,7 +104,6 @@ class ShopDashboardScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFE8F5E9),
         borderRadius: BorderRadius.circular(16),
-        // UPDATED: withValues for border precision
         border: Border.all(color: Colors.green.withValues(alpha: 0.1)),
       ),
       child: Row(
@@ -72,8 +111,8 @@ class ShopDashboardScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-                color: Colors.teal[400],
-                borderRadius: BorderRadius.circular(12)
+              color: Colors.teal[400],
+              borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(Icons.business, color: Colors.white),
           ),
@@ -91,8 +130,8 @@ class ShopDashboardScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                  color: Colors.green,
-                  borderRadius: BorderRadius.circular(20)
+                color: Colors.green,
+                borderRadius: BorderRadius.circular(20),
               ),
               child: const Row(
                 children: [
@@ -113,11 +152,10 @@ class ShopDashboardScreen extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          // UPDATED: withValues for shadow precision
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 5)
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -126,10 +164,9 @@ class ShopDashboardScreen extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            // UPDATED: withValues for the icon background
             decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12)
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color),
           ),
@@ -141,4 +178,48 @@ class ShopDashboardScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildFooter(String date) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          date,
+          style: const TextStyle(color: Colors.grey, fontSize: 12),
+        ),
+        Row(
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.green.withValues(alpha: 0.3),
+                    blurRadius: 4,
+                    spreadRadius: 1,
+                  )
+                ],
+              ),
+            ),
+            const SizedBox(width: 6),
+            const Text(
+              "Connected",
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+// Simple helper class for grid items
+class _ActionItem {
+  final IconData icon;
+  final String title;
+  final Color color;
+  _ActionItem(this.icon, this.title, this.color);
 }
