@@ -13,34 +13,42 @@ class CategoryRepository {
       final String? token = await _storage.getToken();
       if (token == null) throw Exception("No token found");
 
-      // FIX: Ensure there is a trailing slash before the '?'
+      // 1. Clean the Base URL to avoid double slashes
+      String cleanBaseUrl = ApiConstants.baseUrl;
+      if (cleanBaseUrl.endsWith('/')) {
+        cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length - 1);
+      }
 
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      var shopId = prefs.getInt("shopId");
-      final response = await http
-          .get(
-            Uri.parse("${ApiConstants.baseUrl}categories/?shop_id=$shopId"),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-          )
-          .timeout(const Duration(seconds: 10));
+      print("📡 Fetching Categories for Shop ID: $shopId");
+
+      final response = await http.get(
+        Uri.parse("$cleanBaseUrl/categories/?shop_id=$shopId"),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': ApiConstants.apiKey,
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      print("📥 Category Response Code: ${response.statusCode}");
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => Category.fromJson(json)).toList();
+        // 2. Parse the body as a Map first
+        final Map<String, dynamic> body = jsonDecode(response.body);
+
+        // 3. Extract the list from the "data" key
+        final List<dynamic> categoryList = body['data'] ?? [];
+
+        return categoryList.map((json) => Category.fromJson(json)).toList();
       } else if (response.statusCode == 403) {
-        // Detailed log for 403
         print("⛔ 403 Forbidden: User does not have access to shop $shopId");
-        throw Exception(
-          "You don't have permission to view this shop's categories.",
-        );
+        throw Exception("Access Denied: You aren't assigned to this shop.");
       } else {
         throw Exception("Server Error: ${response.statusCode}");
       }
     } catch (e) {
-      throw Exception(e.toString());
+      print("🛑 Category Repo Error: $e");
+      rethrow; // Better to rethrow so the Bloc can catch the specific error
     }
   }
 }

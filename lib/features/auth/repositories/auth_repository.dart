@@ -10,7 +10,7 @@ class AuthRepository {
   Future<AuthResponse> login(String email, String password) async {
 
     final response = await http.post(
-      Uri.parse("${ApiConstants.baseUrl}auth/login/"),
+      Uri.parse("${ApiConstants.baseUrl}auth/v1/auth/login/"),
       headers: {
         "Content-Type": "application/json",
         "X-API-KEY": ApiConstants.apiKey,
