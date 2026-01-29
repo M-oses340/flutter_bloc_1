@@ -17,3 +17,12 @@ class AddProductRequested extends ProductEvent {
     required this.shopId,
   });
 }
+class FilterByCategoryRequested extends ProductEvent {
+  final int categoryId;
+  final int shopId;
+
+  const FilterByCategoryRequested({required this.categoryId, required this.shopId});
+
+  @override
+  List<Object?> get props => [categoryId, shopId];
+}

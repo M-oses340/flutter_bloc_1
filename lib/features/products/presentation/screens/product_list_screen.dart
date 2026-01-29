@@ -20,6 +20,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
   String _selectedFilter = "All";
   final TextEditingController _searchController = TextEditingController();
 
+
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -28,13 +30,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF8F9FA),
         appBar: AppBar(
-          title: const Text("Products",
-              style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+          title: const Text("Products", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
           centerTitle: true,
           backgroundColor: Colors.white,
           elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.black),
-          // 1. FAB logic moved to AppBar Actions
           actions: [
             Builder(
               builder: (context) => IconButton(
@@ -49,7 +48,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       ),
                     ),
                   );
-                  // Refresh list if a product was added
                   if (success == true && context.mounted) {
                     context.read<ProductBloc>().add(GetProductsRequested(widget.shopId));
                   }
@@ -61,11 +59,21 @@ class _ProductListScreenState extends State<ProductListScreen> {
         ),
         body: BlocBuilder<ProductBloc, ProductState>(
           builder: (context, state) {
-            if (state is ProductLoading) {
-              return const Center(child: CircularProgressIndicator(color: Colors.teal));
-            }
+            if (state is ProductLoading) return const Center(child: CircularProgressIndicator(color: Colors.teal));
 
             if (state is ProductLoaded) {
+              // --- SEARCH & FILTER LOGIC ---
+              final filteredProducts = state.products.where((p) {
+                final matchesSearch = p.name.toLowerCase().contains(_searchController.text.toLowerCase()) ||
+                    p.sku.toLowerCase().contains(_searchController.text.toLowerCase());
+
+                // Logic for the chips (example: All, Low Stock < 5)
+                if (_selectedFilter == "Low Stock") return matchesSearch && p.remainingQuantity < 5;
+                if (_selectedFilter == "Out of Stock") return matchesSearch && p.remainingQuantity <= 0;
+
+                return matchesSearch;
+              }).toList();
+
               return Column(
                 children: [
                   Container(
@@ -76,21 +84,24 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         _buildSearchBar(),
                         FilterChipsRow(
                           selectedFilter: _selectedFilter,
-                          onFilterSelected: (val) => setState(() => _selectedFilter = val),
+                          onFilterSelected: (val) {
+                            setState(() => _selectedFilter = val);
+                            // If your chips represent real API categories,
+                            // you'd dispatch FilterByCategoryRequested here instead.
+                          },
                         ),
                       ],
                     ),
                   ),
                   Expanded(
-                    child: RefreshIndicator(
-                      onRefresh: () async => context
-                          .read<ProductBloc>()
-                          .add(GetProductsRequested(widget.shopId)),
+                    child: filteredProducts.isEmpty
+                        ? _buildNoResults()
+                        : RefreshIndicator(
+                      onRefresh: () async => context.read<ProductBloc>().add(GetProductsRequested(widget.shopId)),
                       child: ListView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: state.products.length,
-                        itemBuilder: (context, index) =>
-                            ProductListTile(product: state.products[index]),
+                        itemCount: filteredProducts.length,
+                        itemBuilder: (context, index) => ProductListTile(product: filteredProducts[index]),
                       ),
                     ),
                   ),
@@ -100,7 +111,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
             return const SizedBox.shrink();
           },
         ),
-        // 2. FAB property removed to match your reference image
       ),
     );
   }
@@ -110,18 +120,22 @@ class _ProductListScreenState extends State<ProductListScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
       child: TextField(
         controller: _searchController,
+        onChanged: (value) => setState(() {}), // Triggers rebuild to filter list
         decoration: InputDecoration(
-          hintText: "Search products...",
+          hintText: "Search by name or SKU...",
           prefixIcon: const Icon(Icons.search, color: Colors.grey),
           filled: true,
           fillColor: Colors.grey[100],
           contentPadding: const EdgeInsets.symmetric(vertical: 0),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         ),
       ),
+    );
+  }
+
+  Widget _buildNoResults() {
+    return const Center(
+      child: Text("No products match your search", style: TextStyle(color: Colors.grey)),
     );
   }
 }

@@ -7,12 +7,12 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
   final ProductRepository repository;
 
   ProductBloc({required this.repository}) : super(ProductInitial()) {
-    // Register the handlers
     on<GetProductsRequested>(_onGetProductsRequested);
     on<AddProductRequested>(_onAddProductRequested);
+    // New handler for your specific URL structure
+    on<FilterByCategoryRequested>(_onFilterByCategoryRequested);
   }
 
-  // Fetch Logic
   Future<void> _onGetProductsRequested(
       GetProductsRequested event,
       Emitter<ProductState> emit
@@ -26,20 +26,34 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
     }
   }
 
-  // Add Product Logic
+  Future<void> _onFilterByCategoryRequested(
+      FilterByCategoryRequested event,
+      Emitter<ProductState> emit
+      ) async {
+    emit(ProductLoading());
+    try {
+      // Calling the repository method that matches your URL: /by-category/id/shop/id/
+      final products = await repository.fetchProductsByCategory(
+          event.categoryId,
+          event.shopId
+      );
+      emit(ProductLoaded(products));
+    } catch (e) {
+      emit(ProductError(e.toString().replaceAll("Exception: ", "")));
+    }
+  }
+
   Future<void> _onAddProductRequested(
       AddProductRequested event,
       Emitter<ProductState> emit
       ) async {
-    // We keep the current state (ProductLoaded) while adding to avoid
-    // flickering the screen, or you can emit a specialized loading state.
+    // Emit the specialized adding state to show button loading
+    emit(ProductAdding());
     try {
       await repository.addProduct(event.productData);
-
-      // 1. Emit success so the UI can close the form
       emit(ProductAddSuccess());
 
-      // 2. Refresh the list automatically
+      // Auto-refresh the list
       add(GetProductsRequested(event.shopId));
     } catch (e) {
       emit(ProductError(e.toString().replaceAll("Exception: ", "")));

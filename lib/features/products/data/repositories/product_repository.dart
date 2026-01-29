@@ -66,4 +66,23 @@ class ProductRepository {
       rethrow;
     }
   }
+
+  Future<List<Product>> fetchProductsByCategory(int categoryId, int shopId) async {
+    try {
+      final response = await http.get(
+        Uri.parse("$_cleanBaseUrl/products/by-category/$categoryId/shop/$shopId/"),
+        headers: await _getHeaders(),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> body = jsonDecode(response.body);
+        final List<dynamic> productList = body['data'] ?? [];
+        return productList.map((json) => Product.fromJson(json)).toList();
+      } else {
+        throw Exception("Failed to load products for category $categoryId");
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
 }
