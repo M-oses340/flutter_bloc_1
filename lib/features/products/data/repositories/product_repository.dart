@@ -43,4 +43,27 @@ class ProductRepository {
       rethrow;
     }
   }
+  /// Add a new product to the database
+  Future<Product> addProduct(Map<String, dynamic> productData) async {
+    try {
+      final response = await http.post(
+        Uri.parse("$_cleanBaseUrl/products/"),
+        headers: await _getHeaders(),
+        body: jsonEncode(productData),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final Map<String, dynamic> body = jsonDecode(response.body);
+
+        // Some APIs return the new object inside a 'data' key, others return it directly
+        final dynamic data = body['data'] ?? body;
+        return Product.fromJson(data);
+      } else {
+        // Log the body to see validation errors from your backend (e.g., "SKU already exists")
+        throw Exception("Failed to add product: ${response.body}");
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
 }
