@@ -8,7 +8,7 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
 
   CategoryBloc(this.repository) : super(CategoryLoading()) {
 
-    // 1. Handle Fetching Categories
+    // 1. Handle Fetching All Categories for a Shop
     on<GetCategories>((event, emit) async {
       emit(CategoryLoading());
       try {
@@ -19,18 +19,25 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
       }
     });
 
-    // 2. Handle Adding Category
-    on<AddCategoryRequested>((event, emit) async {
-      // Note: We don't emit Loading here usually,
-      // so the current list stays visible while saving
+    // 2. Handle Fetching a Specific Category by ID
+    on<GetCategoryDetails>((event, emit) async {
+      emit(CategoryLoading()); // Show spinner while fetching details
       try {
-        // Send to server
-        await repository.addCategory(event.name, event.shopId);
+        final category = await repository.fetchCategoryById(event.categoryId);
+        // This state needs to be defined in your category_state.dart
+        emit(CategoryDetailsLoaded(category));
+      } catch (e) {
+        emit(CategoryError(e.toString()));
+      }
+    });
 
-        // REFRESH: Use the same event name as defined above
+    // 3. Handle Adding Category
+    on<AddCategoryRequested>((event, emit) async {
+      try {
+        await repository.addCategory(event.name, event.shopId);
+        // Trigger refresh for the list
         add(GetCategories(event.shopId));
       } catch (e) {
-        // Ensure this matches your CategoryError constructor
         emit(CategoryError(e.toString()));
       }
     });
