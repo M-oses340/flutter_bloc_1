@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../bloc/category_bloc.dart';
 import '../../data/models/category_model.dart';
+import '../widgets/delete_category_dialog.dart';
 
 
 class CategoryDetailScreen extends StatelessWidget {
@@ -14,6 +17,24 @@ class CategoryDetailScreen extends StatelessWidget {
         title: Text(category.name),
         backgroundColor: Colors.teal,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            onPressed: () {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (dialogContext) => DeleteCategoryDialog(
+                  categoryId: category.id,
+                  shopId: category.shop,
+                  categoryName: category.name,
+                  // Now this will find the BLoC successfully!
+                  categoryBloc: context.read<CategoryBloc>(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),

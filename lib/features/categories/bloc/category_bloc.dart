@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../data/repositories/category_repository.dart';
 import 'category_event.dart';
 import 'category_state.dart';
 import '../data/repositories/category_repository.dart';
@@ -21,10 +22,9 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
 
     // 2. Handle Fetching a Specific Category by ID
     on<GetCategoryDetails>((event, emit) async {
-      emit(CategoryLoading()); // Show spinner while fetching details
+      emit(CategoryLoading());
       try {
         final category = await repository.fetchCategoryById(event.categoryId);
-        // This state needs to be defined in your category_state.dart
         emit(CategoryDetailsLoaded(category));
       } catch (e) {
         emit(CategoryError(e.toString()));
@@ -35,7 +35,20 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
     on<AddCategoryRequested>((event, emit) async {
       try {
         await repository.addCategory(event.name, event.shopId);
-        // Trigger refresh for the list
+        // Refresh the list automatically
+        add(GetCategories(event.shopId));
+      } catch (e) {
+        emit(CategoryError(e.toString()));
+      }
+    });
+
+    on<DeleteCategoryRequested>((event, emit) async {
+      try {
+        await repository.deleteCategory(event.categoryId);
+        // Pass the name from the event into the state
+        emit(CategoryDeleted(event.categoryName));
+
+        // Refresh the list automatically
         add(GetCategories(event.shopId));
       } catch (e) {
         emit(CategoryError(e.toString()));

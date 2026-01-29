@@ -5,7 +5,7 @@ import '../../bloc/category_event.dart';
 import '../../bloc/category_state.dart';
 import '../../data/repositories/category_repository.dart';
 
-import 'add_category_screen.dart';
+import '../widgets/add_category_screen.dart'; // Ensure this matches your AddCategoryDialog filename
 import 'category_detail_screen.dart';
 
 class CategoriesScreen extends StatelessWidget {
@@ -61,21 +61,54 @@ class CategoriesScreen extends StatelessWidget {
         ),
         body: BlocListener<CategoryBloc, CategoryState>(
           listener: (context, state) {
+            // Handle Errors
             if (state is CategoryError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(state.message), backgroundColor: Colors.red),
               );
             }
 
+            // Inside CategoriesScreen -> BlocListener -> listener: (context, state) { ... }
+
+            if (state is CategoryDeleted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.delete_sweep, color: Colors.white),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          "Category '${state.categoryName}' deleted successfully",
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
+                  backgroundColor: Colors.redAccent, // Red often fits 'Delete' actions better
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            }
+
+            // Handle Navigation to Details
             if (state is CategoryDetailsLoaded) {
+              final categoryBloc = context.read<CategoryBloc>();
+
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => CategoryDetailScreen(category: state.category),
+                  builder: (_) => BlocProvider.value(
+                    value: categoryBloc,
+                    child: CategoryDetailScreen(category: state.category),
+                  ),
                 ),
               ).then((_) {
+                // Refresh list when user returns from Detail Screen
                 if (context.mounted) {
-                  context.read<CategoryBloc>().add(GetCategories(shopId));
+                  categoryBloc.add(GetCategories(shopId));
                 }
               });
             }

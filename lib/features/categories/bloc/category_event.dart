@@ -18,3 +18,15 @@ class AddCategoryRequested extends CategoryEvent {
   final int shopId;
   AddCategoryRequested({required this.name, required this.shopId});
 }
+
+class DeleteCategoryRequested extends CategoryEvent {
+  final int categoryId;
+  final int shopId;
+  final String categoryName; // Add this
+
+  DeleteCategoryRequested({
+    required this.categoryId,
+    required this.shopId,
+    required this.categoryName
+  });
+}
