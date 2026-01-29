@@ -26,33 +26,47 @@ class CategoriesScreen extends StatelessWidget {
           backgroundColor: Colors.white,
           foregroundColor: Colors.black,
         ),
-        floatingActionButton: Builder(
-          builder: (context) => FloatingActionButton(
-            backgroundColor: Colors.teal,
-            onPressed: () {
-              final bloc = context.read<CategoryBloc>();
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (dialogContext) => AddCategoryDialog(
-                  categoryBloc: bloc,
-                  shopId: shopId,
+        floatingActionButton: BlocBuilder<CategoryBloc, CategoryState>(
+          builder: (context, state) {
+            // Disable button if BLoC is in a loading state
+            final bool isFetching = state is CategoryLoading;
+
+            return FloatingActionButton(
+              backgroundColor: isFetching ? Colors.grey : Colors.teal,
+              onPressed: isFetching
+                  ? null // Disables the button
+                  : () {
+                final bloc = context.read<CategoryBloc>();
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (dialogContext) => AddCategoryDialog(
+                    categoryBloc: bloc,
+                    shopId: shopId,
+                  ),
+                );
+              },
+              child: isFetching
+                  ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
                 ),
-              );
-            },
-            child: const Icon(Icons.add, color: Colors.white),
-          ),
+              )
+                  : const Icon(Icons.add, color: Colors.white),
+            );
+          },
         ),
         body: BlocListener<CategoryBloc, CategoryState>(
           listener: (context, state) {
-            // Handle Errors
             if (state is CategoryError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(state.message), backgroundColor: Colors.red),
               );
             }
 
-            // NAVIGATION: Triggered when the single category fetch (ID 2, 7, etc.) is successful
             if (state is CategoryDetailsLoaded) {
               Navigator.push(
                 context,
@@ -60,7 +74,6 @@ class CategoriesScreen extends StatelessWidget {
                   builder: (_) => CategoryDetailScreen(category: state.category),
                 ),
               ).then((_) {
-                // Optional: Re-fetch the list when returning to ensure data is fresh
                 if (context.mounted) {
                   context.read<CategoryBloc>().add(GetCategories(shopId));
                 }
@@ -68,15 +81,14 @@ class CategoriesScreen extends StatelessWidget {
             }
           },
           child: BlocBuilder<CategoryBloc, CategoryState>(
-            // Optimization: Do not rebuild the main List UI when just loading details
             buildWhen: (previous, current) =>
             current is CategoryLoading ||
                 current is CategoryLoaded ||
                 current is CategoryError,
             builder: (context, state) {
-
               if (state is CategoryLoading) {
-                return const Center(child: CircularProgressIndicator(color: Colors.teal));
+                return const Center(
+                    child: CircularProgressIndicator(color: Colors.teal));
               }
 
               if (state is CategoryLoaded) {
@@ -100,14 +112,18 @@ class CategoriesScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12)),
                         child: ListTile(
                           onTap: () {
-                            // TRIGGER: Fetch specific category (seen in your logs)
-                            context.read<CategoryBloc>().add(GetCategoryDetails(cat.id));
+                            context
+                                .read<CategoryBloc>()
+                                .add(GetCategoryDetails(cat.id));
                           },
-                          leading: const Icon(Icons.category, color: Colors.teal),
+                          leading:
+                          const Icon(Icons.category, color: Colors.teal),
                           title: Text(cat.name,
-                              style: const TextStyle(fontWeight: FontWeight.bold)),
+                              style:
+                              const TextStyle(fontWeight: FontWeight.bold)),
                           subtitle: Text("Shop: ${cat.shopName}"),
-                          trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                          trailing: const Icon(Icons.chevron_right,
+                              color: Colors.grey),
                         ),
                       );
                     },
@@ -136,7 +152,8 @@ class CategoriesScreen extends StatelessWidget {
           const SizedBox(height: 16),
           const Text("No categories found."),
           TextButton(
-            onPressed: () => context.read<CategoryBloc>().add(GetCategories(shopId)),
+            onPressed: () =>
+                context.read<CategoryBloc>().add(GetCategories(shopId)),
             child: const Text("Refresh"),
           )
         ],
@@ -158,7 +175,8 @@ class CategoriesScreen extends StatelessWidget {
                 style: const TextStyle(color: Colors.red)),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => context.read<CategoryBloc>().add(GetCategories(shopId)),
+              onPressed: () =>
+                  context.read<CategoryBloc>().add(GetCategories(shopId)),
               child: const Text("Retry"),
             )
           ],
