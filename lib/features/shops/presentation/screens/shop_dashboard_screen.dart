@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/utils/date_fomatter.dart';
 import '../../../../core/services/connectivity_service.dart';
 import '../../../categories/presentation/screens/categories_screen.dart';
+import '../../../products/presentation/screens/product_list_screen.dart';
 import '../../data/models/shop_model.dart';
 
 class ShopDashboardScreen extends StatelessWidget {
@@ -85,7 +86,20 @@ class ShopDashboardScreen extends StatelessWidget {
           );
         },
       ),
-      _ActionItem(Icons.inventory_2_outlined, "Products", Colors.purple),
+      _ActionItem(
+        Icons.inventory_2_rounded,
+        "Products",
+        Colors.teal,
+        onTap: () {
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductListScreen(shopId: shop.id),
+            ),
+          );
+        },
+      ),
       _ActionItem(Icons.monetization_on_outlined, "Expenses", Colors.redAccent),
       _ActionItem(Icons.shopping_cart_checkout, "Make Sale", Colors.green),
       _ActionItem(Icons.credit_card, "Credit Sale", Colors.orange),
