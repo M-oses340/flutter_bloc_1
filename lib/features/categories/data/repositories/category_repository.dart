@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/utils/storage_service.dart';
 import '../models/category_model.dart';
@@ -8,21 +7,20 @@ import '../models/category_model.dart';
 class CategoryRepository {
   final StorageService _storage = StorageService();
 
+  // Helper to centralize URL cleaning
+  String get _cleanBaseUrl {
+    String url = ApiConstants.baseUrl;
+    return url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+  }
+
+  // --- FETCH ALL ---
   Future<List<Category>> fetchCategories(int shopId) async {
     try {
       final String? token = await _storage.getToken();
       if (token == null) throw Exception("No token found");
 
-      // 1. Clean the Base URL to avoid double slashes
-      String cleanBaseUrl = ApiConstants.baseUrl;
-      if (cleanBaseUrl.endsWith('/')) {
-        cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length - 1);
-      }
-
-      print("📡 Fetching Categories for Shop ID: $shopId");
-
       final response = await http.get(
-        Uri.parse("$cleanBaseUrl/categories/?shop_id=$shopId"),
+        Uri.parse("$_cleanBaseUrl/categories/?shop_id=$shopId"),
         headers: {
           'Content-Type': 'application/json',
           'X-API-KEY': ApiConstants.apiKey,
@@ -30,39 +28,61 @@ class CategoryRepository {
         },
       ).timeout(const Duration(seconds: 10));
 
-      print("📥 Category Response Code: ${response.statusCode}");
-
       if (response.statusCode == 200) {
-        // 2. Parse the body as a Map first
         final Map<String, dynamic> body = jsonDecode(response.body);
-
-        // 3. Extract the list from the "data" key
         final List<dynamic> categoryList = body['data'] ?? [];
-
         return categoryList.map((json) => Category.fromJson(json)).toList();
-      } else if (response.statusCode == 403) {
-        print("⛔ 403 Forbidden: User does not have access to shop $shopId");
-        throw Exception("Access Denied: You aren't assigned to this shop.");
       } else {
         throw Exception("Server Error: ${response.statusCode}");
       }
     } catch (e) {
-      print("🛑 Category Repo Error: $e");
-      rethrow; // Better to rethrow so the Bloc can catch the specific error
+      rethrow;
     }
   }
+
+  // --- FETCH SPECIFIC CATEGORY ---
+  Future<Category> fetchCategoryById(int categoryId) async {
+    try {
+      final String? token = await _storage.getToken();
+      if (token == null) throw Exception("No token found");
+
+      print("📡 Fetching Category Detail for ID: $categoryId");
+
+      // Appends the ID to the path: /categories/2/
+      final response = await http.get(
+        Uri.parse("$_cleanBaseUrl/categories/$categoryId/"),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': ApiConstants.apiKey,
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      print("📥 Single Category Response: ${response.statusCode}");
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> body = jsonDecode(response.body);
+
+        // As per your provided JSON structure, the data is inside the "data" key
+        final Map<String, dynamic> categoryData = body['data'];
+
+        return Category.fromJson(categoryData);
+      } else {
+        throw Exception("Failed to fetch category detail: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("🛑 Single Category Repo Error: $e");
+      rethrow;
+    }
+  }
+
+  // --- ADD CATEGORY ---
   Future<Category> addCategory(String name, int shopId) async {
     try {
       final String? token = await _storage.getToken();
 
-      // Clean URL logic to avoid double slashes
-      String cleanBaseUrl = ApiConstants.baseUrl;
-      if (cleanBaseUrl.endsWith('/')) {
-        cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length - 1);
-      }
-
       final response = await http.post(
-        Uri.parse("$cleanBaseUrl/categories/"),
+        Uri.parse("$_cleanBaseUrl/categories/"),
         headers: {
           'Content-Type': 'application/json',
           'X-API-KEY': ApiConstants.apiKey,
@@ -70,17 +90,13 @@ class CategoryRepository {
         },
         body: jsonEncode({
           "name": name,
-          "shop": shopId, // Matches your backend field name
+          "shop": shopId,
           "is_active": true
         }),
       );
 
-      print("📥 Add Category Response: ${response.statusCode}");
-      print("📥 Add Category Body: ${response.body}");
-
       if (response.statusCode == 201 || response.statusCode == 200) {
         final Map<String, dynamic> body = jsonDecode(response.body);
-        // If the server wraps the response in 'data', extract it
         final Map<String, dynamic> categoryData = body.containsKey('data')
             ? body['data']
             : body;
@@ -89,7 +105,6 @@ class CategoryRepository {
         throw Exception("Failed to add category: ${response.body}");
       }
     } catch (e) {
-      print("🛑 Add Category Error: $e");
       rethrow;
     }
   }
