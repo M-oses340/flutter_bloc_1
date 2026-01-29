@@ -51,4 +51,46 @@ class CategoryRepository {
       rethrow; // Better to rethrow so the Bloc can catch the specific error
     }
   }
+  Future<Category> addCategory(String name, int shopId) async {
+    try {
+      final String? token = await _storage.getToken();
+
+      // Clean URL logic to avoid double slashes
+      String cleanBaseUrl = ApiConstants.baseUrl;
+      if (cleanBaseUrl.endsWith('/')) {
+        cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length - 1);
+      }
+
+      final response = await http.post(
+        Uri.parse("$cleanBaseUrl/categories/"),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': ApiConstants.apiKey,
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          "name": name,
+          "shop": shopId, // Matches your backend field name
+          "is_active": true
+        }),
+      );
+
+      print("📥 Add Category Response: ${response.statusCode}");
+      print("📥 Add Category Body: ${response.body}");
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final Map<String, dynamic> body = jsonDecode(response.body);
+        // If the server wraps the response in 'data', extract it
+        final Map<String, dynamic> categoryData = body.containsKey('data')
+            ? body['data']
+            : body;
+        return Category.fromJson(categoryData);
+      } else {
+        throw Exception("Failed to add category: ${response.body}");
+      }
+    } catch (e) {
+      print("🛑 Add Category Error: $e");
+      rethrow;
+    }
+  }
 }
