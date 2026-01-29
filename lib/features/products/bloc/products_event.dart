@@ -23,6 +23,5 @@ class FilterByCategoryRequested extends ProductEvent {
 
   const FilterByCategoryRequested({required this.categoryId, required this.shopId});
 
-  @override
   List<Object?> get props => [categoryId, shopId];
 }
