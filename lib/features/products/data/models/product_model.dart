@@ -2,7 +2,7 @@ class Product {
   final int id;
   final String name;
   final String sku;
-  final int category;
+  final int categoryId;
   final String productImage;
   final double remainingQuantity;
   final double buyingPrice;
@@ -18,7 +18,7 @@ class Product {
     required this.id,
     required this.name,
     required this.sku,
-    required this.category,
+    required this.categoryId,
     required this.productImage,
     required this.remainingQuantity,
     required this.buyingPrice,
@@ -33,13 +33,12 @@ class Product {
 
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
-      id: json['id'] as int,
+      // Use num? and toInt() to prevent casting errors if id is missing or a double
+      id: (json['id'] as num? ?? 0).toInt(),
       name: json['name'] ?? '',
       sku: json['sku'] ?? '',
-      // Ensure category is treated as an int, default to 0 if missing
-      category: (json['category'] as num? ?? 0).toInt(),
+      categoryId: (json['category'] as num? ?? 0).toInt(),
       productImage: json['product_image'] ?? '',
-      // Safe conversion for all numeric values to double
       remainingQuantity: (json['remaining_quantity'] as num? ?? 0).toDouble(),
       buyingPrice: (json['buying_price'] as num? ?? 0).toDouble(),
       sellingPrice: (json['selling_price'] as num? ?? 0).toDouble(),
@@ -61,7 +60,7 @@ class Product {
       'id': id,
       'name': name,
       'sku': sku,
-      'category': category,
+      'category': categoryId,
       'product_image': productImage,
       'remaining_quantity': remainingQuantity,
       'buying_price': buyingPrice,

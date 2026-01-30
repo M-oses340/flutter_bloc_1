@@ -43,3 +43,30 @@ class FilterByCategoryRequested extends ProductEvent {
   @override
   List<Object?> get props => [categoryId, shopId];
 }
+
+class GetProductDetailsRequested extends ProductEvent {
+  final int productId;
+  const GetProductDetailsRequested(this.productId);
+
+  @override
+  List<Object?> get props => [productId];
+}
+
+class UpdateProductRequested extends ProductEvent {
+  final int productId;
+  final Map<String, dynamic> productData;
+  final File? imageFile;
+  final int shopId;
+  final bool usePut;
+
+  const UpdateProductRequested({
+    required this.productId,
+    required this.productData,
+    this.imageFile,
+    required this.shopId,
+    this.usePut = false,
+  });
+
+  @override
+  List<Object?> get props => [productId, productData, imageFile, shopId, usePut];
+}

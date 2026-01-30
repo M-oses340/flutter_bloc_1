@@ -112,4 +112,75 @@ class ProductRepository {
       rethrow;
     }
   }
+
+  Future<Product> fetchProductById(int productId) async {
+    try {
+      final response = await http.get(
+        Uri.parse("$_cleanBaseUrl/products/$productId/"),
+        headers: await _getHeaders(),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> body = jsonDecode(response.body);
+        final dynamic data = body['data'] ?? body;
+        return Product.fromJson(data);
+      } else {
+        throw Exception("Product not found");
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Product> updateProduct({
+    required int productId,
+    required Map<String, dynamic> productData,
+    File? imageFile,
+    bool isFullUpdate = false, // true for PUT, false for PATCH
+  }) async {
+    try {
+      final url = Uri.parse("$_cleanBaseUrl/products/$productId/");
+
+      // Choose method based on your requirement
+      final method = isFullUpdate ? 'PUT' : 'PATCH';
+      final request = http.MultipartRequest(method, url);
+
+      final headers = await _getHeaders();
+      request.headers.addAll(headers);
+
+      // Add text fields
+      productData.forEach((key, value) {
+        request.fields[key] = value.toString();
+      });
+
+      // Add image if a new one was selected
+      if (imageFile != null) {
+        request.files.add(await http.MultipartFile.fromPath(
+          'product_image',
+          imageFile.path,
+          filename: basename(imageFile.path),
+        ));
+      }
+
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 20));
+      final response = await http.Response.fromStream(streamedResponse);
+
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+
+
+        if (response.statusCode == 204 || response.body.isEmpty) {
+
+          return Product.fromJson(productData);
+        }
+
+        return Product.fromJson(jsonDecode(response.body));
+      } else {
+
+        throw Exception("Update failed (${response.statusCode}): ${response.body}");
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

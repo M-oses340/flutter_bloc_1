@@ -24,7 +24,7 @@ class ProductLoaded extends ProductState {
   List<Object?> get props => [products];
 }
 
-/// State emitted when a product has been successfully saved to the server
+
 class ProductAddSuccess extends ProductState {}
 
 class ProductError extends ProductState {
@@ -34,4 +34,12 @@ class ProductError extends ProductState {
 
   @override
   List<Object?> get props => [message];
+}
+
+class ProductDetailsLoaded extends ProductState {
+  final Product product;
+  const ProductDetailsLoaded(this.product);
+
+  @override
+  List<Object?> get props => [product];
 }
