@@ -4,17 +4,16 @@ import '../../bloc/products_bloc.dart';
 import '../../bloc/products_event.dart';
 import '../../bloc/products_state.dart';
 import '../../data/repositories/product_repository.dart';
+import '../widgets/product_details_header.dart';
+import '../widgets/product_info_section.dart';
+import '../widgets/product_stock_badge.dart';
 import 'edit_product_screen.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final int productId;
   final int shopId;
 
-  const ProductDetailsScreen({
-    super.key,
-    required this.productId,
-    required this.shopId,
-  });
+  const ProductDetailsScreen({super.key, required this.productId, required this.shopId});
 
   @override
   State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
@@ -36,6 +35,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     super.dispose();
   }
 
+  // --- LOGIC METHODS (Fixes the "not defined" errors) ---
+
   Future<void> _handleEdit(dynamic product) async {
     final success = await Navigator.push(
       context,
@@ -47,6 +48,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       ),
     );
 
+    // Refresh the details if the product was updated
     if (success == true && mounted) {
       _productBloc.add(GetProductDetailsRequested(widget.productId));
     }
@@ -75,6 +77,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
+  // --- BUILD METHOD ---
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
@@ -82,63 +86,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          title: const Text("Product Details", style: TextStyle(color: Colors.black)),
-          centerTitle: true,
-          backgroundColor: Colors.white,
-          elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.black),
-          actions: [
-            BlocBuilder<ProductBloc, ProductState>(
-              builder: (context, state) {
-                if (state is ProductDetailsLoaded) {
-                  final product = state.product;
-                  return PopupMenuButton<String>(
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        _handleEdit(product);
-                      } else if (value == 'delete') {
-                        _showDeleteConfirm(product);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(Icons.edit_outlined, color: Colors.teal),
-                            SizedBox(width: 10),
-                            Text("Edit Product"),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete_outline, color: Colors.red),
-                            SizedBox(width: 10),
-                            Text("Delete", style: TextStyle(color: Colors.red)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-            ),
-          ],
+          title: const Text("Product Details"),
+          actions: [_buildPopupMenu()],
         ),
         body: BlocListener<ProductBloc, ProductState>(
           listener: (context, state) {
             if (state is ProductAddSuccess) {
-              // Note: We check if the current state isn't a transition before popping
-              // because ProductAddSuccess is used for both Edit and Delete.
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Successful"), backgroundColor: Colors.teal),
-              );
-
-              // If we reach this state from a delete, we must go back to the list
+              // Usually indicates a successful deletion or update that requires closing the screen
               Navigator.pop(context, true);
             }
             if (state is ProductError) {
@@ -148,35 +102,25 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             }
           },
           child: BlocBuilder<ProductBloc, ProductState>(
-            buildWhen: (previous, current) =>
-            current is ProductDetailsLoaded ||
-                current is ProductError ||
-                current is ProductLoading,
+            buildWhen: (p, c) => c is ProductDetailsLoaded || c is ProductLoading || c is ProductError,
             builder: (context, state) {
               if (state is ProductLoading) {
                 return const Center(child: CircularProgressIndicator(color: Colors.teal));
               }
 
               if (state is ProductDetailsLoaded) {
-                final product = state.product;
+                final p = state.product;
                 return SingleChildScrollView(
                   child: Column(
                     children: [
-                      _buildImageHeader(product.productImage),
+                      ProductDetailsHeader(imageUrl: p.productImage),
                       Padding(
                         padding: const EdgeInsets.all(20.0),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(product.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 4),
-                            Text("SKU: ${product.sku}", style: const TextStyle(color: Colors.grey, fontSize: 16)),
-                            const Divider(height: 40),
-                            _buildDetailRow("Selling Price", "KSh ${product.sellingPrice.toStringAsFixed(0)}", isBold: true),
-                            _buildDetailRow("Buying Price", "KSh ${product.buyingPrice.toStringAsFixed(0)}"),
-                            _buildDetailRow("Current Stock", "${product.remainingQuantity.toInt()} units"),
+                            ProductInfoSection(product: p),
                             const SizedBox(height: 40),
-                            _buildStockIndicator(product.remainingQuantity),
+                            ProductStockBadge(quantity: p.remainingQuantity),
                           ],
                         ),
                       ),
@@ -186,15 +130,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               }
 
               if (state is ProductError) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Text(state.message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
-                  ),
-                );
+                return Center(child: Text(state.message, style: const TextStyle(color: Colors.red)));
               }
 
-              return const Center(child: CircularProgressIndicator(color: Colors.teal));
+              return const SizedBox();
             },
           ),
         ),
@@ -202,52 +141,37 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  // --- UI Components remain the same ---
-  Widget _buildImageHeader(String url) {
-    return Container(
-      height: 300,
-      width: double.infinity,
-      decoration: BoxDecoration(color: Colors.grey[100]),
-      child: url.isNotEmpty
-          ? Image.network(url, fit: BoxFit.cover)
-          : const Icon(Icons.inventory_2_outlined, size: 80, color: Colors.teal),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value, {bool isBold = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 16)),
-          Text(value, style: TextStyle(
-              fontSize: 16,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
-              color: isBold ? Colors.teal : Colors.black
-          )),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStockIndicator(double qty) {
-    Color color = qty > 5 ? Colors.green : (qty > 0 ? Colors.orange : Colors.red);
-    String label = qty > 5 ? "In Stock" : (qty > 0 ? "Low Stock" : "Out of Stock");
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.info_outline, color: color),
-          const SizedBox(width: 12),
-          Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
-        ],
-      ),
+  Widget _buildPopupMenu() {
+    return BlocBuilder<ProductBloc, ProductState>(
+      builder: (context, state) {
+        if (state is! ProductDetailsLoaded) return const SizedBox();
+        final product = state.product;
+        return PopupMenuButton<String>(
+          onSelected: (val) => val == 'edit' ? _handleEdit(product) : _showDeleteConfirm(product),
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit, size: 20),
+                    SizedBox(width: 8),
+                    Text("Edit Product"),
+                  ],
+                )
+            ),
+            const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete, size: 20, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text("Delete", style: TextStyle(color: Colors.red)),
+                  ],
+                )
+            ),
+          ],
+        );
+      },
     );
   }
 }
