@@ -40,23 +40,16 @@ class CategoryProductList extends StatelessWidget {
               ));
             },
             child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               physics: const AlwaysScrollableScrollPhysics(),
               itemCount: state.products.length,
               itemBuilder: (context, index) {
                 final product = state.products[index];
-                return InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ProductDetailsScreen(
-                          productId: product.id,
-                          shopId: shopId,
-                        ),
-                      ),
-                    );
-                  },
-                  child: ProductListTile(product: product),
+
+                // Pass the product and the onTap directly to our custom tile
+                return ProductListTile(
+                  product: product,
+                  onTap: () => _navigateToDetails(context, product.id),
                 );
               },
             ),
@@ -72,6 +65,27 @@ class CategoryProductList extends StatelessWidget {
         return const SizedBox.shrink();
       },
     );
+  }
+
+  // Helper method to handle navigation safely
+  void _navigateToDetails(BuildContext context, int productId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProductDetailsScreen(
+          productId: productId,
+          shopId: shopId,
+        ),
+      ),
+    ).then((_) {
+      // Refresh the filtered list when coming back
+      if (context.mounted) {
+        context.read<ProductBloc>().add(FilterByCategoryRequested(
+          categoryId: categoryId,
+          shopId: shopId,
+        ));
+      }
+    });
   }
 
   Widget _buildEmptyProducts() {
