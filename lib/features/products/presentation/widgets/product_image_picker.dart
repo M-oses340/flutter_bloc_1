@@ -4,54 +4,46 @@ import 'package:image_picker/image_picker.dart';
 
 class ProductImagePicker extends StatelessWidget {
   final File? selectedImage;
+  final String? initialImageUrl; // Added for Edit mode
   final Function(File) onImageSelected;
 
   const ProductImagePicker({
     super.key,
-    required this.selectedImage,
+    this.selectedImage,
+    this.initialImageUrl,
     required this.onImageSelected,
   });
-
-  Future<void> _pickImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1000,
-      imageQuality: 80,
-    );
-
-    if (image != null) {
-      onImageSelected(File(image.path));
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: _pickImage,
+      onTap: () async {
+        final picker = ImagePicker();
+        final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+        if (image != null) onImageSelected(File(image.path));
+      },
       child: Container(
-        width: double.infinity,
         height: 180,
+        width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[300]!, width: 1),
+          border: Border.all(color: Colors.grey[300]!),
         ),
-        child: selectedImage != null
-            ? ClipRRect(
+        child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: Image.file(selectedImage!, fit: BoxFit.cover),
-        )
-            : Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.add_a_photo_rounded, size: 40, color: Colors.teal[300]),
-            const SizedBox(height: 8),
-            Text("Add Product Photo",
-                style: TextStyle(color: Colors.teal[700], fontWeight: FontWeight.w500)),
-          ],
+          child: _buildImageContent(),
         ),
       ),
     );
+  }
+
+  Widget _buildImageContent() {
+    if (selectedImage != null) {
+      return Image.file(selectedImage!, fit: BoxFit.cover, width: double.infinity);
+    } else if (initialImageUrl != null && initialImageUrl!.isNotEmpty) {
+      return Image.network(initialImageUrl!, fit: BoxFit.cover, width: double.infinity);
+    }
+    return const Icon(Icons.add_a_photo_outlined, size: 40, color: Colors.teal);
   }
 }

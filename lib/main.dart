@@ -7,13 +7,12 @@ import 'features/auth/bloc/auth_event.dart';
 import 'features/auth/bloc/auth_state.dart';
 import 'features/auth/repositories/auth_repository.dart';
 import 'features/login/presentation/screens/login_screen.dart';
-// Import the actual HomeScreen from the shops feature
 import 'features/shops/presentation/screens/home_screen.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-  // Recommended when using plugins like Secure Storage
+
   runApp(const MyApp());
 }
 
@@ -37,11 +36,11 @@ class MyApp extends StatelessWidget {
           theme: ThemeData(primarySwatch: Colors.blue),
           home: BlocBuilder<AuthBloc, AuthState>(
             builder: (context, state) {
-              // Now returning the actual Shop List screen when authenticated
+
               if (state is Authenticated) {
                 return const HomeScreen();
               }
-              // Shows Splash/Initial state while checking token
+
               if (state is AuthInitial) {
                 return const Scaffold(
                   body: Center(child: CircularProgressIndicator()),
