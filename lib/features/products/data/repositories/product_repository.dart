@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:path/path.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/utils/storage_service.dart';
 import '../models/product_model.dart';
@@ -24,7 +26,7 @@ class ProductRepository {
     };
   }
 
-  /// Fetch all products for a specific shop
+
   Future<List<Product>> fetchProducts(int shopId) async {
     try {
       final response = await http.get(
@@ -43,24 +45,49 @@ class ProductRepository {
       rethrow;
     }
   }
-  /// Add a new product to the database
-  Future<Product> addProduct(Map<String, dynamic> productData) async {
+
+  Future<Product> addProduct(Map<String, dynamic> productData, File? imageFile) async {
     try {
-      final response = await http.post(
-        Uri.parse("$_cleanBaseUrl/products/"),
-        headers: await _getHeaders(),
-        body: jsonEncode(productData),
-      ).timeout(const Duration(seconds: 10));
+      final url = Uri.parse("$_cleanBaseUrl/products/");
+
+
+      final request = http.MultipartRequest('POST', url);
+
+
+      final headers = await _getHeaders();
+      request.headers.addAll(headers);
+
+
+      productData.forEach((key, value) {
+        request.fields[key] = value.toString();
+      });
+
+
+      if (imageFile != null) {
+        final stream = http.ByteStream(imageFile.openRead());
+        final length = await imageFile.length();
+
+        final multipartFile = http.MultipartFile(
+          'product_image',
+          stream,
+          length,
+          filename: basename(imageFile.path),
+        );
+
+        request.files.add(multipartFile);
+      }
+
+
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 20));
+      final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final Map<String, dynamic> body = jsonDecode(response.body);
-
-        // Some APIs return the new object inside a 'data' key, others return it directly
         final dynamic data = body['data'] ?? body;
         return Product.fromJson(data);
       } else {
-        // Log the body to see validation errors from your backend (e.g., "SKU already exists")
-        throw Exception("Failed to add product: ${response.body}");
+
+        throw Exception("Error ${response.statusCode}: ${response.body}");
       }
     } catch (e) {
       rethrow;

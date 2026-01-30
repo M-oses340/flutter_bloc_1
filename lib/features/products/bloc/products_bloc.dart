@@ -9,13 +9,13 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
   ProductBloc({required this.repository}) : super(ProductInitial()) {
     on<GetProductsRequested>(_onGetProductsRequested);
     on<AddProductRequested>(_onAddProductRequested);
-    // New handler for your specific URL structure
     on<FilterByCategoryRequested>(_onFilterByCategoryRequested);
   }
 
+
   Future<void> _onGetProductsRequested(
       GetProductsRequested event,
-      Emitter<ProductState> emit
+      Emitter<ProductState> emit,
       ) async {
     emit(ProductLoading());
     try {
@@ -26,16 +26,16 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
     }
   }
 
+
   Future<void> _onFilterByCategoryRequested(
       FilterByCategoryRequested event,
-      Emitter<ProductState> emit
+      Emitter<ProductState> emit,
       ) async {
     emit(ProductLoading());
     try {
-      // Calling the repository method that matches your URL: /by-category/id/shop/id/
       final products = await repository.fetchProductsByCategory(
-          event.categoryId,
-          event.shopId
+        event.categoryId,
+        event.shopId,
       );
       emit(ProductLoaded(products));
     } catch (e) {
@@ -43,17 +43,22 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
     }
   }
 
+
   Future<void> _onAddProductRequested(
       AddProductRequested event,
-      Emitter<ProductState> emit
+      Emitter<ProductState> emit,
       ) async {
-    // Emit the specialized adding state to show button loading
     emit(ProductAdding());
     try {
-      await repository.addProduct(event.productData);
+      // Correctly passing text data AND the image file
+      await repository.addProduct(
+        event.productData,
+        event.imageFile,
+      );
+
       emit(ProductAddSuccess());
 
-      // Auto-refresh the list
+
       add(GetProductsRequested(event.shopId));
     } catch (e) {
       emit(ProductError(e.toString().replaceAll("Exception: ", "")));

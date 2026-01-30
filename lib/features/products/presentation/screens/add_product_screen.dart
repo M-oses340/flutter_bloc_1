@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../bloc/products_bloc.dart';
 import '../../bloc/products_event.dart';
 import '../../bloc/products_state.dart';
@@ -14,28 +16,55 @@ class AddProductScreen extends StatefulWidget {
 
 class _AddProductScreenState extends State<AddProductScreen> {
   final _formKey = GlobalKey<FormState>();
+
+  // Controllers
   final _nameController = TextEditingController();
   final _skuController = TextEditingController();
   final _buyingPriceController = TextEditingController();
   final _sellingPriceController = TextEditingController();
   final _quantityController = TextEditingController();
 
+  // Image handling - No more base64 string needed here
+  File? _selectedImage;
+
+  /// Picks an image from the gallery
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1000, // Reduced slightly for better upload speed
+      imageQuality: 80,
+    );
+
+    if (image != null) {
+      setState(() {
+        _selectedImage = File(image.path);
+      });
+    }
+  }
+
   void _onSavePressed(BuildContext context) {
     if (!_formKey.currentState!.validate()) return;
 
+    // We prepare the text fields
     final productData = {
       "name": _nameController.text.trim(),
       "sku": _skuController.text.trim(),
       "shop": widget.shopId,
-      "buying_price": double.parse(_buyingPriceController.text),
-      "selling_price": double.parse(_sellingPriceController.text),
-      "remaining_quantity": double.parse(_quantityController.text),
-      "category": 1,
+      "buying_price": _buyingPriceController.text.trim(),
+      "selling_price": _sellingPriceController.text.trim(),
+      "remaining_quantity": _quantityController.text.trim(),
+      "category": 1, // You might want to make this dynamic later
       "is_active": true,
     };
 
+    // We dispatch the event with the actual File object
     context.read<ProductBloc>().add(
-        AddProductRequested(productData: productData, shopId: widget.shopId)
+      AddProductRequested(
+        productData: productData,
+        imageFile: _selectedImage, // Pass the File directly
+        shopId: widget.shopId,
+      ),
     );
   }
 
@@ -44,15 +73,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Add New Product", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text("Add New Product",
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
       ),
       body: BlocListener<ProductBloc, ProductState>(
-        // Use listenWhen to react only to Success or Error for this screen
-        listenWhen: (previous, current) => current is ProductAddSuccess || current is ProductError,
+        listenWhen: (prev, curr) => curr is ProductAddSuccess || curr is ProductError,
         listener: (context, state) {
           if (state is ProductAddSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -72,6 +101,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _buildImagePicker(),
+                const SizedBox(height: 20),
                 _buildInput(_nameController, "Product Name", Icons.shopping_bag_outlined),
                 _buildInput(_skuController, "SKU / Barcode", Icons.qr_code_scanner),
                 Row(
@@ -83,36 +114,68 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 ),
                 _buildInput(_quantityController, "Initial Stock Level", Icons.inventory_2_outlined, isNum: true),
                 const SizedBox(height: 32),
-
-                // Only build the button part based on state
-                BlocBuilder<ProductBloc, ProductState>(
-                  builder: (context, state) {
-                    final isAdding = state is ProductAdding;
-                    return SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.teal,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: isAdding ? null : () => _onSavePressed(context),
-                        child: isAdding
-                            ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                        )
-                            : const Text("Save Product", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                      ),
-                    );
-                  },
-                ),
+                _buildSaveButton(),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildImagePicker() {
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Container(
+        width: double.infinity,
+        height: 180,
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey[300]!, width: 1),
+        ),
+        child: _selectedImage != null
+            ? ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Image.file(_selectedImage!, fit: BoxFit.cover),
+        )
+            : Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add_a_photo_rounded, size: 40, color: Colors.teal[300]),
+            const SizedBox(height: 8),
+            Text("Add Product Photo",
+                style: TextStyle(color: Colors.teal[700], fontWeight: FontWeight.w500)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSaveButton() {
+    return BlocBuilder<ProductBloc, ProductState>(
+      builder: (context, state) {
+        final isAdding = state is ProductAdding;
+        return SizedBox(
+          width: double.infinity,
+          height: 55,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.teal,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: isAdding ? null : () => _onSavePressed(context),
+            child: isAdding
+                ? const SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+            )
+                : const Text("Save Product",
+                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          ),
+        );
+      },
     );
   }
 
@@ -136,7 +199,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
             borderSide: BorderSide(color: Colors.grey[200]!),
           ),
         ),
-        validator: (value) => value == null || value.isEmpty ? "Required" : null,
+        validator: (value) => (value == null || value.isEmpty) ? "Required" : null,
       ),
     );
   }
