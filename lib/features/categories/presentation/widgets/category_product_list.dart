@@ -67,7 +67,7 @@ class CategoryProductList extends StatelessWidget {
     );
   }
 
-  // Helper method to handle navigation safely
+
   void _navigateToDetails(BuildContext context, int productId) {
     Navigator.push(
       context,
@@ -78,7 +78,7 @@ class CategoryProductList extends StatelessWidget {
         ),
       ),
     ).then((_) {
-      // Refresh the filtered list when coming back
+
       if (context.mounted) {
         context.read<ProductBloc>().add(FilterByCategoryRequested(
           categoryId: categoryId,

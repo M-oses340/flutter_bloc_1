@@ -1,5 +1,3 @@
-// lib/features/products/presentation/screens/product_list_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../bloc/products_bloc.dart';
@@ -138,7 +136,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
-  // --- Async Safe Navigation ---
+
 
   void _navigateToAddProduct(BuildContext context) async {
     // Capture the Bloc reference before the async gap
