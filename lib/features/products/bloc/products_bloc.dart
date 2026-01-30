@@ -15,7 +15,7 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
     on<UpdateProductRequested>(_onUpdateProductRequested);
   }
 
-  // --- Handlers ---
+
 
   Future<void> _onGetProductsRequested(GetProductsRequested event, Emitter<ProductState> emit) async {
     emit(ProductLoading());
