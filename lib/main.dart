@@ -6,7 +6,7 @@ import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/bloc/auth_event.dart';
 import 'features/auth/bloc/auth_state.dart';
 import 'features/auth/repositories/auth_repository.dart';
-import 'features/login/presentation/login_screen.dart';
+import 'features/login/presentation/screens/login_screen.dart';
 // Import the actual HomeScreen from the shops feature
 import 'features/shops/presentation/screens/home_screen.dart';
 
