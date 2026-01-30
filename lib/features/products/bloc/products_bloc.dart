@@ -11,8 +11,7 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
     on<AddProductRequested>(_onAddProductRequested);
     on<FilterByCategoryRequested>(_onFilterByCategoryRequested);
     on<GetProductDetailsRequested>(_onGetProductDetailsRequested);
-
-    // Register the update handler
+    on<DeleteProductRequested>(_onDeleteProductRequested);
     on<UpdateProductRequested>(_onUpdateProductRequested);
   }
 
@@ -83,6 +82,26 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
       add(GetProductsRequested(event.shopId));
     } catch (e) {
       emit(ProductError(e.toString().replaceAll("Exception: ", "")));
+    }
+  }
+  // Inside ProductBloc
+
+
+  Future<void> _onDeleteProductRequested(DeleteProductRequested event, Emitter<ProductState> emit) async {
+    // We can use ProductAdding or create a ProductDeleting state
+    emit(ProductAdding());
+
+    try {
+      await repository.deleteProduct(event.productId);
+
+      // 1. Emit success so the UI can navigate away
+      emit(ProductAddSuccess());
+
+      // 2. Refresh the main list so the deleted item disappears
+      add(GetProductsRequested(event.shopId));
+
+    } catch (e) {
+      emit(ProductError(e.toString()));
     }
   }
 }

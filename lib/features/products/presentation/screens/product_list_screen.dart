@@ -7,7 +7,7 @@ import '../../data/repositories/product_repository.dart';
 import '../widgets/product_list_tile.dart';
 import '../widgets/filter_chips_row.dart';
 import 'add_product_screen.dart';
-import 'product_details_screen.dart'; // Ensure this screen is created
+import 'product_details_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
   final int shopId;

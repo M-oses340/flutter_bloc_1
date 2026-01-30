@@ -15,7 +15,7 @@ class ProductRepository {
     return url.endsWith('/') ? url.substring(0, url.length - 1) : url;
   }
 
-  // Consistent header management
+
   Future<Map<String, String>> _getHeaders() async {
     final String? token = await _storage.getToken();
     if (token == null) throw Exception("No token found");
@@ -178,6 +178,24 @@ class ProductRepository {
       } else {
 
         throw Exception("Update failed (${response.statusCode}): ${response.body}");
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteProduct(int productId) async {
+    try {
+      final url = Uri.parse("$_cleanBaseUrl/products/$productId/");
+
+      final response = await http.delete(
+        url,
+        headers: await _getHeaders(),
+      ).timeout(const Duration(seconds: 10));
+
+
+      if (response.statusCode != 204 && response.statusCode != 200) {
+        throw Exception("Failed to delete product (${response.statusCode}): ${response.body}");
       }
     } catch (e) {
       rethrow;

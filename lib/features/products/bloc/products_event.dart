@@ -70,3 +70,14 @@ class UpdateProductRequested extends ProductEvent {
   @override
   List<Object?> get props => [productId, productData, imageFile, shopId, usePut];
 }
+// Add this to products_event.dart
+
+class DeleteProductRequested extends ProductEvent {
+  final int productId;
+  final int shopId;
+
+  DeleteProductRequested(this.productId, this.shopId);
+
+  @override
+  List<Object?> get props => [productId, shopId];
+}

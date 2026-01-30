@@ -31,7 +31,7 @@ class ProductListTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              // --- UPDATED IMAGE SECTION ---
+
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
@@ -91,7 +91,7 @@ class ProductListTile extends StatelessWidget {
     );
   }
 
-  /// Helper to handle Network Images with an error/empty state
+
   Widget _buildProductImage(String imageUrl) {
     if (imageUrl.isEmpty) {
       return const Icon(Icons.inventory_2_outlined, color: Colors.teal, size: 28);

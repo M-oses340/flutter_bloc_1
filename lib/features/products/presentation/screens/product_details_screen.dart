@@ -48,9 +48,31 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
 
     if (success == true && mounted) {
-      // Refresh the data
       _productBloc.add(GetProductDetailsRequested(widget.productId));
     }
+  }
+
+  void _showDeleteConfirm(dynamic product) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text("Delete Product?"),
+        content: Text("Are you sure you want to delete ${product.name}? This action cannot be undone."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext); // Close dialog
+              _productBloc.add(DeleteProductRequested(widget.productId, widget.shopId));
+            },
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -69,9 +91,37 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             BlocBuilder<ProductBloc, ProductState>(
               builder: (context, state) {
                 if (state is ProductDetailsLoaded) {
-                  return IconButton(
-                    icon: const Icon(Icons.edit_outlined, color: Colors.teal),
-                    onPressed: () => _handleEdit(state.product),
+                  final product = state.product;
+                  return PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _handleEdit(product);
+                      } else if (value == 'delete') {
+                        _showDeleteConfirm(product);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit_outlined, color: Colors.teal),
+                            SizedBox(width: 10),
+                            Text("Edit Product"),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_outline, color: Colors.red),
+                            SizedBox(width: 10),
+                            Text("Delete", style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
                   );
                 }
                 return const SizedBox.shrink();
@@ -79,65 +129,80 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             ),
           ],
         ),
-        body: BlocBuilder<ProductBloc, ProductState>(
-          // PREVENTS DISAPPEARING: Only rebuild UI for these specific states.
-          // This keeps the current data on screen while the "Success" pop happens.
-          buildWhen: (previous, current) =>
-          current is ProductDetailsLoaded ||
-              current is ProductError ||
-              current is ProductLoading,
-          builder: (context, state) {
-            if (state is ProductLoading) {
-              return const Center(child: CircularProgressIndicator(color: Colors.teal));
-            }
-
-            if (state is ProductDetailsLoaded) {
-              final product = state.product;
-              return SingleChildScrollView(
-                child: Column(
-                  children: [
-                    _buildImageHeader(product.productImage),
-                    Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(product.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 4),
-                          Text("SKU: ${product.sku}", style: const TextStyle(color: Colors.grey, fontSize: 16)),
-                          const Divider(height: 40),
-                          _buildDetailRow("Selling Price", "KSh ${product.sellingPrice.toStringAsFixed(0)}", isBold: true),
-                          _buildDetailRow("Buying Price", "KSh ${product.buyingPrice.toStringAsFixed(0)}"),
-                          _buildDetailRow("Current Stock", "${product.remainingQuantity.toInt()} units"),
-                          const SizedBox(height: 40),
-                          _buildStockIndicator(product.remainingQuantity),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+        body: BlocListener<ProductBloc, ProductState>(
+          listener: (context, state) {
+            if (state is ProductAddSuccess) {
+              // Note: We check if the current state isn't a transition before popping
+              // because ProductAddSuccess is used for both Edit and Delete.
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Successful"), backgroundColor: Colors.teal),
               );
-            }
 
+              // If we reach this state from a delete, we must go back to the list
+              Navigator.pop(context, true);
+            }
             if (state is ProductError) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Text(state.message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
-                ),
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message), backgroundColor: Colors.red),
               );
             }
-
-            // Fallback: This is only hit if the initial load hasn't happened yet.
-            return const Center(child: CircularProgressIndicator(color: Colors.teal));
           },
+          child: BlocBuilder<ProductBloc, ProductState>(
+            buildWhen: (previous, current) =>
+            current is ProductDetailsLoaded ||
+                current is ProductError ||
+                current is ProductLoading,
+            builder: (context, state) {
+              if (state is ProductLoading) {
+                return const Center(child: CircularProgressIndicator(color: Colors.teal));
+              }
+
+              if (state is ProductDetailsLoaded) {
+                final product = state.product;
+                return SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      _buildImageHeader(product.productImage),
+                      Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(product.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 4),
+                            Text("SKU: ${product.sku}", style: const TextStyle(color: Colors.grey, fontSize: 16)),
+                            const Divider(height: 40),
+                            _buildDetailRow("Selling Price", "KSh ${product.sellingPrice.toStringAsFixed(0)}", isBold: true),
+                            _buildDetailRow("Buying Price", "KSh ${product.buyingPrice.toStringAsFixed(0)}"),
+                            _buildDetailRow("Current Stock", "${product.remainingQuantity.toInt()} units"),
+                            const SizedBox(height: 40),
+                            _buildStockIndicator(product.remainingQuantity),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              if (state is ProductError) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Text(state.message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
+                  ),
+                );
+              }
+
+              return const Center(child: CircularProgressIndicator(color: Colors.teal));
+            },
+          ),
         ),
       ),
     );
   }
 
-  // --- UI Components ---
-
+  // --- UI Components remain the same ---
   Widget _buildImageHeader(String url) {
     return Container(
       height: 300,
