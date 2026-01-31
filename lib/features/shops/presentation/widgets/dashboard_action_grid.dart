@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../categories/presentation/screens/categories_screen.dart';
 import '../../../products/presentation/screens/product_list_screen.dart';
+import '../../../expenses/presentation/screens/expense_list_screen.dart';
+import '../../../expenses/bloc/expense_bloc.dart';
+import '../../../expenses/bloc/expense_event.dart';
 
 class DashboardActionGrid extends StatelessWidget {
   final int shopId;
@@ -34,11 +38,37 @@ class DashboardActionGrid extends StatelessWidget {
 
   List<_ActionItem> _getActions(BuildContext context) {
     return [
-      _ActionItem(Icons.grid_view_rounded, "Categories", Colors.teal,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CategoriesScreen(shopId: shopId)))),
-      _ActionItem(Icons.inventory_2_rounded, "Products", Colors.teal,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProductListScreen(shopId: shopId)))),
-      _ActionItem(Icons.monetization_on_outlined, "Expenses", Colors.redAccent),
+      _ActionItem(
+        Icons.grid_view_rounded,
+        "Categories",
+        Colors.teal,
+        onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => CategoriesScreen(shopId: shopId))
+        ),
+      ),
+      _ActionItem(
+        Icons.inventory_2_rounded,
+        "Products",
+        Colors.teal,
+        onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => ProductListScreen(shopId: shopId))
+        ),
+      ),
+      _ActionItem(
+        Icons.monetization_on_outlined,
+        "Expenses",
+        Colors.redAccent,
+        onTap: () {
+          // Trigger fetch before navigating for a snappier feel
+          context.read<ExpenseBloc>().add(FetchExpensesRequested(shopId));
+          Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ExpenseListScreen(shopId: shopId))
+          );
+        },
+      ),
       _ActionItem(Icons.shopping_cart_checkout, "Make Sale", Colors.green),
       _ActionItem(Icons.credit_card, "Credit Sale", Colors.orange),
       _ActionItem(Icons.list_alt_rounded, "All Sales", Colors.indigo),
@@ -62,18 +92,31 @@ class _ActionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 5))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 5)
+          )
+        ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12)
+            ),
             child: Icon(icon, color: color),
           ),
           const SizedBox(height: 12),
-          Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 8),
           Container(width: 20, height: 2, color: color),
         ],

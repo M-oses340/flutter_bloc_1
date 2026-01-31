@@ -21,18 +21,42 @@ class ExpenseRepository {
     };
   }
 
-  // GET ALL
   Future<List<Expense>> fetchExpenses(int shopId) async {
-    final response = await http.get(
-      Uri.parse("$_cleanBaseUrl/expenses/?shop=$shopId"),
-      headers: await _getHeaders(),
-    );
-    if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      final List data = body['data'] ?? [];
-      return data.map((e) => Expense.fromJson(e)).toList();
+    // 1. Prepare Date Parameters (Format: YYYY-MM-DD)
+    final now = DateTime.now();
+    final firstDayOfMonth = DateTime(now.year, now.month, 1);
+
+    final String startDate = firstDayOfMonth.toString().split(' ').first;
+    final String endDate = now.toString().split(' ').first;
+
+    // 2. Build the precise URL required by your API
+    final String url = "$_cleanBaseUrl/expenses/"
+        "?shop_id=$shopId"
+        "&start_date=$startDate"
+        "&end_date=$endDate";
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: await _getHeaders(),
+      );
+
+      print("📡 Requesting: $url");
+      print("✅ Status: ${response.statusCode}");
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        // Adjust 'data' to 'results' if your API uses a different key
+        final List data = body['data'] ?? body['results'] ?? [];
+        return data.map((e) => Expense.fromJson(e)).toList();
+      } else {
+        print("❌ Server Error Body: ${response.body}");
+        throw Exception("Server Error: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("🚀 Repository Error: $e");
+      rethrow;
     }
-    throw Exception("Failed to load expenses");
   }
 
   // GET BY ID (Fixes your 'method not defined' error)

@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../data/models/expense_model.dart';
 import '../data/repositories/expense_repository.dart';
 import 'expense_event.dart';
 import 'expense_state.dart';
@@ -40,15 +41,25 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
       }
     });
 
-    // 3. GET BY ID (Detail Fetch)
     on<FetchExpenseDetailRequested>((event, emit) async {
-      emit(ExpenseLoading());
+      // Preserve current list to prevent the "Empty Screen" when navigating back
+      List<Expense> currentExpenses = [];
+      if (state is ExpensesLoaded) {
+        currentExpenses = (state as ExpensesLoaded).allExpenses;
+      } else if (state is ExpenseDetailLoaded) {
+        currentExpenses = (state as ExpenseDetailLoaded).allExpenses;
+      }
+
       try {
-        // Ensure this method exists in your ExpenseRepository
-        final expense = await repository.fetchExpenseById(event.expenseId);
-        emit(ExpenseDetailLoaded(expense));
+        // USE event.expenseId HERE (matches your event class)
+        final expenseDetail = await repository.fetchExpenseById(event.expenseId);
+
+        emit(ExpenseDetailLoaded(
+          expense: expenseDetail,
+          allExpenses: currentExpenses,
+        ));
       } catch (e) {
-        emit(ExpenseError("Detail Fetch Failed: ${e.toString()}"));
+        emit(ExpenseError(e.toString()));
       }
     });
 

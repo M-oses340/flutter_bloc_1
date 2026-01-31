@@ -13,7 +13,11 @@ class ExpensesLoaded extends ExpenseState {
 
 class ExpenseDetailLoaded extends ExpenseState {
   final Expense expense;
-  ExpenseDetailLoaded(this.expense);
+  final List<Expense> allExpenses; // Keep the list alive
+
+  ExpenseDetailLoaded({required this.expense, required this.allExpenses});
+
+  List<Object?> get props => [expense, allExpenses];
 }
 
 class ExpenseActionSuccess extends ExpenseState {
