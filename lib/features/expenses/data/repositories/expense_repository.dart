@@ -68,7 +68,7 @@ class ExpenseRepository {
     throw Exception("Expense not found");
   }
 
-  // Move this to expense_repository.dart
+
   Future<Expense> addExpense(Expense expense) async {
     final response = await http.post(
       Uri.parse("$_cleanBaseUrl/expenses/"),
@@ -84,7 +84,7 @@ class ExpenseRepository {
   }
 
 
-  // DELETE
+
   Future<void> deleteExpense(int id) async {
     final response = await http.delete(
       Uri.parse("$_cleanBaseUrl/expenses/$id/"),
@@ -92,6 +92,36 @@ class ExpenseRepository {
     );
     if (response.statusCode != 204 && response.statusCode != 200) {
       throw Exception("Delete failed");
+    }
+  }
+
+  Future<Expense> updateExpense(
+      int id,
+      Expense expense, {
+        bool usePatch = false, // Default to PUT
+      }) async {
+    final url = Uri.parse("$_cleanBaseUrl/expenses/$id/");
+    final headers = await _getHeaders();
+    final body = jsonEncode(expense.toJson());
+
+    try {
+      final http.Response response;
+
+      if (usePatch) {
+        response = await http.patch(url, headers: headers, body: body);
+      } else {
+        response = await http.put(url, headers: headers, body: body);
+      }
+
+      if (response.statusCode == 200) {
+        final bodyData = jsonDecode(response.body);
+        return Expense.fromJson(bodyData['data'] ?? bodyData);
+      } else {
+        final errorBody = jsonDecode(response.body);
+        throw Exception(errorBody['message'] ?? "Update failed with status: ${response.statusCode}");
+      }
+    } catch (e) {
+      rethrow;
     }
   }
 }

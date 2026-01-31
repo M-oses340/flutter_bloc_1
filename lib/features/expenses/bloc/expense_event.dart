@@ -18,12 +18,14 @@ class FetchExpenseDetailRequested extends ExpenseEvent {
 }
 
 class AddExpenseRequested extends ExpenseEvent {
-  final Expense expense; // Pass the whole object
+  final Expense expense;
   AddExpenseRequested(this.expense);
 }
-
 class DeleteExpenseRequested extends ExpenseEvent {
-  final int expenseId;
-  final int shopId;
-  DeleteExpenseRequested(this.expenseId, this.shopId);
+  final Expense expense;
+  DeleteExpenseRequested(this.expense);
+}
+class UpdateExpenseRequested extends ExpenseEvent {
+  final Expense expense;
+  UpdateExpenseRequested(this.expense);
 }

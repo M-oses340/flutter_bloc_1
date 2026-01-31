@@ -21,39 +21,53 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    context.read<ExpenseBloc>().add(FetchExpensesRequested(widget.shopId));
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
-  // Logic to trigger the bottom sheet, matching your product navigation style
   void _showAddExpenseSheet(BuildContext context) {
-    final expenseBloc = context.read<ExpenseBloc>();
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent, // Material in AddExpenseSheet handles color
+      backgroundColor: Colors.transparent,
       builder: (sheetContext) => BlocProvider.value(
-        value: expenseBloc,
+        value: context.read<ExpenseBloc>(),
         child: AddExpenseSheet(shopId: widget.shopId),
       ),
     );
   }
 
+  // Inside ExpenseListScreen
   List<Expense> _getFilteredExpenses(List<Expense> expenses) {
     final query = _searchController.text.toLowerCase();
-    return expenses.where((e) {
+
+    // 1. Filter based on search
+    final filtered = expenses.where((e) {
       return e.title.toLowerCase().contains(query) ||
           e.description.toLowerCase().contains(query);
     }).toList();
+
+    // 2. ✅ Sort by Date (Latest first)
+    filtered.sort((a, b) {
+      final dateA = DateTime.tryParse(a.createdAt ?? "") ?? DateTime(0);
+      final dateB = DateTime.tryParse(b.createdAt ?? "") ?? DateTime(0);
+      return dateB.compareTo(dateA);
+    });
+
+    return filtered;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      // --- UPDATED APPBAR ---
       appBar: AppBar(
         title: const Text("Expenses", style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
@@ -61,55 +75,54 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         actions: [
-          Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.add_circle_outline, color: Colors.redAccent, size: 28),
-              onPressed: () => _showAddExpenseSheet(context),
-            ),
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline, color: Colors.redAccent, size: 28),
+            onPressed: () => _showAddExpenseSheet(context),
           ),
           const SizedBox(width: 8),
         ],
       ),
-      body: BlocListener<ExpenseBloc, ExpenseState>(
-        listener: (context, state) {
-          if (state is ExpenseDetailLoaded) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => ExpenseDetailScreen(expense: state.expense)));
+      body: BlocBuilder<ExpenseBloc, ExpenseState>(
+        builder: (context, state) {
+          if (state is ExpenseLoading && state is! ExpensesLoaded) {
+            return const Center(child: CircularProgressIndicator());
           }
-        },
-        child: BlocBuilder<ExpenseBloc, ExpenseState>(
-          builder: (context, state) {
-            if (state is ExpenseLoading) return const Center(child: CircularProgressIndicator());
 
-            if (state is ExpensesLoaded || state is ExpenseDetailLoaded) {
-              final all = (state is ExpensesLoaded) ? state.allExpenses : (state as ExpenseDetailLoaded).allExpenses;
-              final filtered = _getFilteredExpenses(all);
-
-              return Column(
-                children: [
-                  _buildHeader(filtered),
-                  Expanded(
-                    child: filtered.isEmpty
-                        ? _buildEmptyState()
-                        : _buildExpenseList(filtered),
-                  ),
-                ],
-              );
+          if (state is ExpensesLoaded || state is ExpenseDetailLoaded || state is ExpenseActionSuccess) {
+            List<Expense> all = [];
+            if (state is ExpensesLoaded) {
+              all = state.allExpenses;
+            } else if (state is ExpenseDetailLoaded) {
+              all = state.allExpenses;
             }
-            return const Center(child: Text("Unable to load expenses."));
-          },
-        ),
+
+            final filtered = _getFilteredExpenses(all);
+
+            return Column(
+              children: [
+                _buildHeader(filtered),
+                Expanded(
+                  child: filtered.isEmpty
+                      ? _buildEmptyState()
+                      : _buildExpenseList(filtered),
+                ),
+              ],
+            );
+          }
+
+          return const Center(child: Text("Unable to load expenses."));
+        },
       ),
-      // FAB IS REMOVED FOR CONSISTENCY
     );
   }
 
-  // Extracted helper widgets for cleaner code
   Widget _buildHeader(List<Expense> filtered) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
+            // ✅ Updated from withOpacity to withValues
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -131,8 +144,8 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                 fillColor: const Color(0xFFF1F2F6),
                 contentPadding: EdgeInsets.zero,
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
               ),
             ),
@@ -149,12 +162,21 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
         itemCount: filtered.length,
-        itemBuilder: (context, index) => ExpenseListTile(
-          expense: filtered[index],
-          onTap: () => context.read<ExpenseBloc>().add(
-            FetchExpenseDetailRequested(filtered[index].id!),
-          ),
-        ),
+        itemBuilder: (context, index) {
+          final expense = filtered[index];
+          return ExpenseListTile(
+            expense: expense,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ExpenseDetailScreen(expense: expense),
+                ),
+              );
+              context.read<ExpenseBloc>().add(FetchExpenseDetailRequested(expense.id!));
+            },
+          );
+        },
       ),
     );
   }
@@ -164,6 +186,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // ✅ Updated from withOpacity to withValues
           Icon(Icons.search_off, size: 64, color: Colors.grey.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
           const Text("No expenses found", style: TextStyle(color: Colors.grey)),

@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../data/models/expense_model.dart';
-import '../data/repositories/expense_repository.dart'; // Ensure this path is correct
+import '../data/repositories/expense_repository.dart';
 import 'expense_event.dart';
 import 'expense_state.dart';
 
@@ -9,20 +9,30 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
 
   ExpenseBloc({required this.repository}) : super(ExpenseInitial()) {
 
+
+    // Inside your ExpenseBloc
     on<FetchExpensesRequested>((event, emit) async {
-      emit(ExpenseLoading());
       try {
+        emit(ExpenseLoading());
         final expenses = await repository.fetchExpenses(event.shopId);
+
+        // ✅ Sort: Newest/Most recently updated first
+        expenses.sort((a, b) {
+          final dateA = DateTime.tryParse(a.createdAt ?? "") ?? DateTime(0);
+          final dateB = DateTime.tryParse(b.createdAt ?? "") ?? DateTime(0);
+          return dateB.compareTo(dateA); // Descending order
+        });
+
         emit(ExpensesLoaded(expenses: expenses, allExpenses: expenses));
       } catch (e) {
         emit(ExpenseError(e.toString()));
       }
     });
 
+    // 2. SEARCH / FILTER
     on<SearchExpenseByTitle>((event, emit) {
       final currentState = state;
       if (currentState is ExpensesLoaded || currentState is ExpenseDetailLoaded) {
-        // Get the full list from whichever state we are currently in
         final List<Expense> pool = (currentState is ExpensesLoaded)
             ? currentState.allExpenses
             : (currentState as ExpenseDetailLoaded).allExpenses;
@@ -37,6 +47,7 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
         }
       }
     });
+
 
     on<FetchExpenseDetailRequested>((event, emit) async {
       List<Expense> currentExpenses = [];
@@ -57,25 +68,51 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
       }
     });
 
-    on<DeleteExpenseRequested>((event, emit) async {
+
+    on<AddExpenseRequested>((event, emit) async {
       try {
-        await repository.deleteExpense(event.expenseId);
-        // Refresh the list after deletion to keep UI in sync
-        add(FetchExpensesRequested(event.shopId));
+        await repository.addExpense(event.expense);
+        emit(ExpenseActionSuccess("Expense added successfully"));
+        add(FetchExpensesRequested(event.expense.shopId));
+      } catch (e) {
+        emit(ExpenseError("Failed to add: ${e.toString()}"));
+      }
+    });
+
+    on<UpdateExpenseRequested>((event, emit) async {
+      try {
+
+        await repository.updateExpense(
+          event.expense.id!,
+          event.expense,
+          usePatch: true,
+        );
+
+        emit(ExpenseDetailLoaded(
+          expense: event.expense,
+          allExpenses: state is ExpensesLoaded ? (state as ExpensesLoaded).allExpenses : [],
+        ));
+
+        emit(ExpenseActionSuccess("Expense updated successfully"));
+
+
+        add(FetchExpensesRequested(event.expense.shopId));
+
       } catch (e) {
         emit(ExpenseError(e.toString()));
       }
     });
 
-    on<AddExpenseRequested>((event, emit) async {
-      try {
-        // We use the model passed inside the event
-        await repository.addExpense(event.expense);
 
-        // Refresh the list immediately using the shop ID from the model
+    on<DeleteExpenseRequested>((event, emit) async {
+      try {
+        await repository.deleteExpense(event.expense.id!);
+        emit(ExpenseActionSuccess("Expense deleted successfully"));
+
+        // Use shopId from the model to refresh the correct list
         add(FetchExpensesRequested(event.expense.shopId));
       } catch (e) {
-        emit(ExpenseError(e.toString()));
+        emit(ExpenseError("Delete failed: ${e.toString()}"));
       }
     });
   }

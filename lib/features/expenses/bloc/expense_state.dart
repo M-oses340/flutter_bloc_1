@@ -13,7 +13,7 @@ class ExpensesLoaded extends ExpenseState {
 
 class ExpenseDetailLoaded extends ExpenseState {
   final Expense expense;
-  final List<Expense> allExpenses; // Keep the list alive
+  final List<Expense> allExpenses;
 
   ExpenseDetailLoaded({required this.expense, required this.allExpenses});
 

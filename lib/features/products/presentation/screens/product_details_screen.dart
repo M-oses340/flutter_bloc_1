@@ -35,7 +35,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     super.dispose();
   }
 
-  // --- LOGIC METHODS (Fixes the "not defined" errors) ---
+
 
   Future<void> _handleEdit(dynamic product) async {
     final success = await Navigator.push(
@@ -48,7 +48,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       ),
     );
 
-    // Refresh the details if the product was updated
+
     if (success == true && mounted) {
       _productBloc.add(GetProductDetailsRequested(widget.productId));
     }
@@ -92,7 +92,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         body: BlocListener<ProductBloc, ProductState>(
           listener: (context, state) {
             if (state is ProductAddSuccess) {
-              // Usually indicates a successful deletion or update that requires closing the screen
+
               Navigator.pop(context, true);
             }
             if (state is ProductError) {
