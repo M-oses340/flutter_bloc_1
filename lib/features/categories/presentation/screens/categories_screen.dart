@@ -16,21 +16,25 @@ class CategoriesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return BlocProvider(
       create: (context) => CategoryBloc(CategoryRepository())..add(GetCategories(shopId)),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F9FA),
+        // ✅ FIX: Use theme scaffold background instead of hardcoded hex
+        backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
-          title: const Text("Categories"),
+          title: const Text("Categories", style: TextStyle(fontWeight: FontWeight.bold)),
+          centerTitle: true,
+          // ✅ FIX: Inherit AppBar theme for automatic light/dark switching
+          backgroundColor: theme.appBarTheme.backgroundColor,
+          foregroundColor: theme.appBarTheme.foregroundColor,
           elevation: 0,
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
         ),
-        // This will now find the class correctly
         floatingActionButton: CategoryAddButton(shopId: shopId),
         body: BlocListener<CategoryBloc, CategoryState>(
           listener: (context, state) {
-            // ... (Your existing listener logic for errors and navigation)
             if (state is CategoryDetailsLoaded) {
               final categoryBloc = context.read<CategoryBloc>();
               Navigator.push(
@@ -50,7 +54,8 @@ class CategoriesScreen extends StatelessWidget {
             buildWhen: (p, c) => c is CategoryLoading || c is CategoryLoaded || c is CategoryError,
             builder: (context, state) {
               if (state is CategoryLoading) {
-                return const Center(child: CircularProgressIndicator(color: Colors.teal));
+                // ✅ FIX: Use theme primary (Teal)
+                return Center(child: CircularProgressIndicator(color: colorScheme.primary));
               }
 
               if (state is CategoryLoaded) {
@@ -61,9 +66,10 @@ class CategoriesScreen extends StatelessWidget {
                 }
 
                 return RefreshIndicator(
+                  color: colorScheme.primary,
                   onRefresh: () async => context.read<CategoryBloc>().add(GetCategories(shopId)),
                   child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     itemCount: state.categories.length,
                     itemBuilder: (context, index) {
                       return CategoryListTile(

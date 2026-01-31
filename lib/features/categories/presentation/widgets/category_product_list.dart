@@ -20,19 +20,23 @@ class CategoryProductList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return BlocBuilder<ProductBloc, ProductState>(
       builder: (context, state) {
         if (state is ProductLoading) {
-          return const Center(child: CircularProgressIndicator(color: Colors.teal));
+          // ✅ FIX: Use primary brand color
+          return Center(child: CircularProgressIndicator(color: colorScheme.primary));
         }
 
         if (state is ProductLoaded) {
           if (state.products.isEmpty) {
-            return _buildEmptyProducts();
+            return _buildEmptyProducts(context);
           }
 
           return RefreshIndicator(
-            color: Colors.teal,
+            color: colorScheme.primary,
             onRefresh: () async {
               context.read<ProductBloc>().add(FilterByCategoryRequested(
                 categoryId: categoryId,
@@ -40,13 +44,11 @@ class CategoryProductList extends StatelessWidget {
               ));
             },
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
               physics: const AlwaysScrollableScrollPhysics(),
               itemCount: state.products.length,
               itemBuilder: (context, index) {
                 final product = state.products[index];
-
-                // Pass the product and the onTap directly to our custom tile
                 return ProductListTile(
                   product: product,
                   onTap: () => _navigateToDetails(context, product.id),
@@ -58,7 +60,10 @@ class CategoryProductList extends StatelessWidget {
 
         if (state is ProductError) {
           return Center(
-            child: Text(state.message, style: const TextStyle(color: Colors.red)),
+            child: Text(
+                state.message,
+                style: TextStyle(color: colorScheme.error) // ✅ FIX: Use semantic error
+            ),
           );
         }
 
@@ -66,7 +71,6 @@ class CategoryProductList extends StatelessWidget {
       },
     );
   }
-
 
   void _navigateToDetails(BuildContext context, int productId) {
     Navigator.push(
@@ -78,7 +82,6 @@ class CategoryProductList extends StatelessWidget {
         ),
       ),
     ).then((_) {
-
       if (context.mounted) {
         context.read<ProductBloc>().add(FilterByCategoryRequested(
           categoryId: categoryId,
@@ -88,16 +91,28 @@ class CategoryProductList extends StatelessWidget {
     });
   }
 
-  Widget _buildEmptyProducts() {
+  Widget _buildEmptyProducts(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.shopping_basket_outlined, size: 48, color: Colors.grey[400]),
-          const SizedBox(height: 8),
-          Text("No products assigned to $categoryName",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600])),
+          // ✅ FIX: Themed icon color
+          Icon(
+              Icons.shopping_basket_outlined,
+              size: 48,
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
+          ),
+          const SizedBox(height: 12),
+          Text(
+            "No products assigned to $categoryName",
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );

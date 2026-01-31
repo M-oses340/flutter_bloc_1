@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../bloc/category_bloc.dart';
 import '../../bloc/category_state.dart';
-import '../screens/add_category_screen.dart';
+import '../screens/add_category_screen.dart'; // Ensure this points to your AddCategoryDialog
 
 class CategoryAddButton extends StatelessWidget {
   final int shopId;
@@ -11,16 +11,25 @@ class CategoryAddButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return BlocBuilder<CategoryBloc, CategoryState>(
       builder: (context, state) {
         final bool isFetching = state is CategoryLoading;
 
         return FloatingActionButton(
-          backgroundColor: isFetching ? Colors.grey : Colors.teal,
+          // ✅ FIX: Use primary for active, and a tonal surface variant for busy state
+          backgroundColor: isFetching
+              ? colorScheme.surfaceContainerHighest
+              : colorScheme.primary,
+          // ✅ FIX: Match icon/progress color to the background
+          foregroundColor: isFetching
+              ? colorScheme.onSurfaceVariant
+              : colorScheme.onPrimary,
           onPressed: isFetching
               ? null
               : () {
-
             final bloc = context.read<CategoryBloc>();
             showDialog(
               context: context,
@@ -32,15 +41,16 @@ class CategoryAddButton extends StatelessWidget {
             );
           },
           child: isFetching
-              ? const SizedBox(
+              ? SizedBox(
             width: 20,
             height: 20,
             child: CircularProgressIndicator(
-              color: Colors.white,
+              // ✅ Progress indicator now adapts to the button's foreground color
+              color: colorScheme.onSurfaceVariant,
               strokeWidth: 2,
             ),
           )
-              : const Icon(Icons.add, color: Colors.white),
+              : const Icon(Icons.add),
         );
       },
     );

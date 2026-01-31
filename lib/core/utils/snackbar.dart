@@ -1,40 +1,72 @@
 import 'package:flutter/material.dart';
 
 class SnackBarUtils {
-  // Success Snackbar
+  // ✅ FIX: Uses Primary (Teal) for success
   static void showSuccess(BuildContext context, String message) {
-    _show(context, message, Colors.green, Icons.check_circle_outline);
+    final colorScheme = Theme.of(context).colorScheme;
+    _show(
+        context,
+        message,
+        colorScheme.primary,
+        colorScheme.onPrimary,
+        Icons.check_circle_outline
+    );
   }
 
-  // Error Snackbar
+  // ✅ FIX: Uses Semantic Error color
   static void showError(BuildContext context, String message) {
-    _show(context, message, Colors.redAccent, Icons.error_outline);
+    final colorScheme = Theme.of(context).colorScheme;
+    _show(
+        context,
+        message,
+        colorScheme.error,
+        colorScheme.onError,
+        Icons.error_outline
+    );
   }
 
-  // Warning/Info Snackbar
+  // ✅ FIX: Uses Tertiary or Secondary for Info
   static void showInfo(BuildContext context, String message) {
-    _show(context, message, Colors.blueAccent, Icons.info_outline);
+    final colorScheme = Theme.of(context).colorScheme;
+    _show(
+        context,
+        message,
+        colorScheme.tertiary,
+        colorScheme.onTertiary,
+        Icons.info_outline
+    );
   }
 
-  static void _show(BuildContext context, String message, Color color, IconData icon) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar(); // Dismiss existing ones
+  static void _show(
+      BuildContext context,
+      String message,
+      Color bgColor,
+      Color textColor,
+      IconData icon
+      ) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            Icon(icon, color: Colors.white),
+            Icon(icon, color: textColor),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  color: textColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
               ),
             ),
           ],
         ),
-        backgroundColor: color,
+        backgroundColor: bgColor,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 3),
       ),

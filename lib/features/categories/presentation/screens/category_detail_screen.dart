@@ -16,16 +16,23 @@ class CategoryDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(category.name),
-        backgroundColor: Colors.teal,
-        foregroundColor: Colors.white,
+        title: Text(category.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        // ✅ FIX: Use theme-defined colors for automatic switching
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        foregroundColor: theme.appBarTheme.foregroundColor,
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete_outline),
+            // ✅ FIX: Use semantic error color for delete actions
+            icon: Icon(Icons.delete_outline, color: colorScheme.error),
             onPressed: () => _confirmDelete(context),
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Padding(
@@ -34,12 +41,15 @@ class CategoryDetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CategoryInfoCard(category: category),
-            const SizedBox(height: 24),
-            const Text(
+            const SizedBox(height: 32), // Increased spacing for better hierarchy
+            Text(
               "Products in this category",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Expanded(
               child: BlocProvider(
                 create: (context) => ProductBloc(repository: ProductRepository())

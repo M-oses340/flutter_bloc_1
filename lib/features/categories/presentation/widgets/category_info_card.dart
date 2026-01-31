@@ -8,34 +8,59 @@ class CategoryInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        // ✅ FIX: SurfaceContainerLow provides a modern M3 "card" look
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
       ),
       child: Column(
         children: [
-          _detailRow("Category ID", category.id.toString()),
-          const Divider(),
-          _detailRow("Shop Name", category.shopName),
-          const Divider(),
-          _detailRow("Status", category.isActive ? "Active" : "Inactive",
-              valueColor: category.isActive ? Colors.green : Colors.red),
+          _detailRow(context, "Category ID", category.id.toString()),
+          Divider(color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+          _detailRow(context, "Shop Name", category.shopName),
+          Divider(color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+          _detailRow(
+            context,
+            "Status",
+            category.isActive ? "Active" : "Inactive",
+            // ✅ FIX: Use semantic colors instead of hardcoded Green/Red
+            valueColor: category.isActive ? colorScheme.primary : colorScheme.error,
+          ),
         ],
       ),
     );
   }
 
-  Widget _detailRow(String label, String value, {Color? valueColor}) {
+  Widget _detailRow(BuildContext context, String label, String value, {Color? valueColor}) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.grey)),
-          Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: valueColor ?? Colors.black)),
+          Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurfaceVariant, // Muted label color
+              )
+          ),
+          Text(
+              value,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: valueColor ?? colorScheme.onSurface, // Adaptive primary text
+              )
+          ),
         ],
       ),
     );
