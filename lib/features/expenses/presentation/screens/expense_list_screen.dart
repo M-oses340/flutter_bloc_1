@@ -4,6 +4,7 @@ import '../../bloc/expense_bloc.dart';
 import '../../bloc/expense_event.dart';
 import '../../bloc/expense_state.dart';
 import '../../data/models/expense_model.dart';
+import '../widgets/add_expense_sheet.dart';
 import '../widgets/expense_list_tile.dart';
 import '../widgets/expense_summary_card.dart';
 import 'expense_detail_screen.dart';
@@ -132,7 +133,15 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
         label: const Text("Add Expense", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         icon: const Icon(Icons.add, color: Colors.white),
         onPressed: () {
-          // TODO: Open Create Expense Screen
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true, // Crucial for keyboard handling
+            backgroundColor: Colors.white,
+            builder: (sheetContext) => BlocProvider.value(
+              value: context.read<ExpenseBloc>(), // Share the existing Bloc
+              child: AddExpenseSheet(shopId: widget.shopId),
+            ),
+          );
         },
       ),
     );

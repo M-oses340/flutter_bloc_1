@@ -55,7 +55,7 @@ class ExpenseRepository {
     }
   }
 
-  // GET BY ID (Fixes your 'method not defined' error)
+
   Future<Expense> fetchExpenseById(int id) async {
     final response = await http.get(
       Uri.parse("$_cleanBaseUrl/expenses/$id/"),
@@ -68,19 +68,21 @@ class ExpenseRepository {
     throw Exception("Expense not found");
   }
 
-  // POST (Fixes your 'Map vs Expense' type error)
+  // Move this to expense_repository.dart
   Future<Expense> addExpense(Expense expense) async {
     final response = await http.post(
       Uri.parse("$_cleanBaseUrl/expenses/"),
       headers: await _getHeaders(),
       body: jsonEncode(expense.toJson()),
     );
+
     if (response.statusCode == 201 || response.statusCode == 200) {
       final body = jsonDecode(response.body);
       return Expense.fromJson(body['data'] ?? body);
     }
     throw Exception("Failed to create expense");
   }
+
 
   // DELETE
   Future<void> deleteExpense(int id) async {

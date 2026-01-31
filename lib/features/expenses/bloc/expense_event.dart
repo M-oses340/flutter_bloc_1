@@ -17,9 +17,9 @@ class FetchExpenseDetailRequested extends ExpenseEvent {
   FetchExpenseDetailRequested(this.expenseId);
 }
 
-class CreateExpenseRequested extends ExpenseEvent {
-  final Expense expense; // Changed from Map to Expense model
-  CreateExpenseRequested(this.expense);
+class AddExpenseRequested extends ExpenseEvent {
+  final Expense expense; // Pass the whole object
+  AddExpenseRequested(this.expense);
 }
 
 class DeleteExpenseRequested extends ExpenseEvent {

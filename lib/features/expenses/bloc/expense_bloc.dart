@@ -66,5 +66,17 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
         emit(ExpenseError(e.toString()));
       }
     });
+
+    on<AddExpenseRequested>((event, emit) async {
+      try {
+        // We use the model passed inside the event
+        await repository.addExpense(event.expense);
+
+        // Refresh the list immediately using the shop ID from the model
+        add(FetchExpensesRequested(event.expense.shopId));
+      } catch (e) {
+        emit(ExpenseError(e.toString()));
+      }
+    });
   }
 }
