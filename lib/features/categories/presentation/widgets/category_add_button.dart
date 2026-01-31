@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../bloc/category_bloc.dart';
 import '../../bloc/category_state.dart';
-import 'add_category_screen.dart';
+import '../screens/add_category_screen.dart';
 
 class CategoryAddButton extends StatelessWidget {
   final int shopId;
