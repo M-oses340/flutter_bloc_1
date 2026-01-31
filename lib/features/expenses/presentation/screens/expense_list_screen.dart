@@ -26,6 +26,21 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     super.dispose();
   }
 
+  // Logic to trigger the bottom sheet, matching your product navigation style
+  void _showAddExpenseSheet(BuildContext context) {
+    final expenseBloc = context.read<ExpenseBloc>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent, // Material in AddExpenseSheet handles color
+      builder: (sheetContext) => BlocProvider.value(
+        value: expenseBloc,
+        child: AddExpenseSheet(shopId: widget.shopId),
+      ),
+    );
+  }
+
   List<Expense> _getFilteredExpenses(List<Expense> expenses) {
     final query = _searchController.text.toLowerCase();
     return expenses.where((e) {
@@ -38,13 +53,22 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-
+      // --- UPDATED APPBAR ---
       appBar: AppBar(
         title: const Text("Expenses", style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
+        actions: [
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.add_circle_outline, color: Colors.redAccent, size: 28),
+              onPressed: () => _showAddExpenseSheet(context),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: BlocListener<ExpenseBloc, ExpenseState>(
         listener: (context, state) {
@@ -62,63 +86,11 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
 
               return Column(
                 children: [
-                  // FIXED HEADER with subtle shadow to separate from the list
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.only(bottom: 12), // Tighter bottom padding
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                          child: TextField(
-                            controller: _searchController,
-                            onChanged: (_) => setState(() {}),
-                            decoration: InputDecoration(
-                              hintText: "Search transactions...",
-                              prefixIcon: const Icon(Icons.search, size: 20),
-                              filled: true,
-                              fillColor: const Color(0xFFF1F2F6),
-                              contentPadding: EdgeInsets.zero,
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none
-                              ),
-                            ),
-                          ),
-                        ),
-                        // Summary card now sits closer to the search bar
-                        ExpenseSummaryCard(expenses: filtered),
-                      ],
-                    ),
-                  ),
-
-                  // SCROLLABLE LIST
+                  _buildHeader(filtered),
                   Expanded(
                     child: filtered.isEmpty
                         ? _buildEmptyState()
-                        : RefreshIndicator(
-                      onRefresh: () async => context.read<ExpenseBloc>().add(FetchExpensesRequested(widget.shopId)),
-                      child: ListView.builder(
-                        // Standardized padding
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-                        itemCount: filtered.length,
-                        itemBuilder: (context, index) => ExpenseListTile(
-                          expense: filtered[index],
-                          onTap: () => context.read<ExpenseBloc>().add(
-                            FetchExpenseDetailRequested(filtered[index].id!),
-                          ),
-                        ),
-                      ),
-                    ),
+                        : _buildExpenseList(filtered),
                   ),
                 ],
               );
@@ -127,26 +99,65 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
           },
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: Colors.redAccent,
-        elevation: 4,
-        label: const Text("Add Expense", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        icon: const Icon(Icons.add, color: Colors.white),
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true, // Crucial for keyboard handling
-            backgroundColor: Colors.white,
-            builder: (sheetContext) => BlocProvider.value(
-              value: context.read<ExpenseBloc>(), // Share the existing Bloc
-              child: AddExpenseSheet(shopId: widget.shopId),
+      // FAB IS REMOVED FOR CONSISTENCY
+    );
+  }
+
+  // Extracted helper widgets for cleaner code
+  Widget _buildHeader(List<Expense> filtered) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: "Search transactions...",
+                prefixIcon: const Icon(Icons.search, size: 20),
+                filled: true,
+                fillColor: const Color(0xFFF1F2F6),
+                contentPadding: EdgeInsets.zero,
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none
+                ),
+              ),
             ),
-          );
-        },
+          ),
+          ExpenseSummaryCard(expenses: filtered),
+        ],
       ),
     );
   }
 
+  Widget _buildExpenseList(List<Expense> filtered) {
+    return RefreshIndicator(
+      onRefresh: () async => context.read<ExpenseBloc>().add(FetchExpensesRequested(widget.shopId)),
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        itemCount: filtered.length,
+        itemBuilder: (context, index) => ExpenseListTile(
+          expense: filtered[index],
+          onTap: () => context.read<ExpenseBloc>().add(
+            FetchExpenseDetailRequested(filtered[index].id!),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildEmptyState() {
     return Center(
