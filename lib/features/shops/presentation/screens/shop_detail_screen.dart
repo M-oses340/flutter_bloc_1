@@ -8,42 +8,88 @@ class ShopDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      appBar: AppBar(title: Text(shop.name)),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(shop.name),
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        foregroundColor: theme.appBarTheme.foregroundColor,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Status Chip
+            // ✅ Status Chip using Theme colors
             Chip(
-              label: Text(shop.isActive ? "Active" : "Inactive"),
-              backgroundColor: shop.isActive ? Colors.green[100] : Colors.red[100],
+              side: BorderSide.none,
+              label: Text(
+                shop.isActive ? "Active" : "Inactive",
+                style: TextStyle(
+                  color: shop.isActive ? Colors.green[800] : colorScheme.error,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              backgroundColor: shop.isActive
+                  ? Colors.green.withValues(alpha: 0.2)
+                  : colorScheme.errorContainer.withValues(alpha: 0.3),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
 
-            // Info Sections
-            _infoTile(Icons.person, "Owner", shop.ownerName),
-            _infoTile(Icons.location_on, "Location", shop.location ?? "No location provided"),
-            _infoTile(Icons.badge, "Your Role", shop.userRole),
+            // ✅ Info Sections
+            _infoTile(context, Icons.person_outline, "Owner", shop.ownerName),
+            _infoTile(context, Icons.location_on_outlined, "Location", shop.location ?? "No location provided"),
+            _infoTile(context, Icons.badge_outlined, "Your Role", shop.userRole),
 
             const Divider(height: 40),
 
-            const Text("Description", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+                "Description",
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)
+            ),
             const SizedBox(height: 8),
-            Text(shop.description ?? "No description available for this shop."),
+            Text(
+              shop.description ?? "No description available for this shop.",
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.8),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _infoTile(IconData icon, String label, String value) {
+  Widget _infoTile(BuildContext context, IconData icon, String label, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return ListTile(
-      leading: Icon(icon, color: Colors.blue),
-      title: Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-      subtitle: Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-      contentPadding: EdgeInsets.zero,
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: colorScheme.primary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: colorScheme.primary, size: 20),
+      ),
+      title: Text(
+          label,
+          style: textTheme.labelSmall?.copyWith(
+            color: colorScheme.onSurface.withValues(alpha: 0.5),
+          )
+      ),
+      subtitle: Text(
+          value,
+          style: textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          )
+      ),
+      contentPadding: const EdgeInsets.symmetric(vertical: 4),
     );
   }
 }

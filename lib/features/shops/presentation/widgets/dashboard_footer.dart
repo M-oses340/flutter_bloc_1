@@ -3,13 +3,23 @@ import '../../../../core/services/connectivity_service.dart';
 
 class DashboardFooter extends StatelessWidget {
   final String date;
-  // We initialize the service here or pass it in via constructor
+
   final ConnectivityService _connectivityService = ConnectivityService();
 
   DashboardFooter({super.key, required this.date});
 
   @override
   Widget build(BuildContext context) {
+
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+
+    final mutedStyle = theme.textTheme.bodySmall?.copyWith(
+      color: colorScheme.onSurface.withValues(alpha: 0.5),
+      fontSize: 12,
+    );
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -18,14 +28,16 @@ class DashboardFooter extends StatelessWidget {
           children: [
             Text(
               date,
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
+              style: mutedStyle,
             ),
             StreamBuilder<NetworkStatus>(
               stream: _connectivityService.connectivityStream,
               initialData: NetworkStatus.online,
               builder: (context, snapshot) {
                 final isOnline = snapshot.data == NetworkStatus.online;
-                final statusColor = isOnline ? Colors.green : Colors.red;
+
+
+                final statusColor = isOnline ? Colors.greenAccent[700] : colorScheme.error;
 
                 return Row(
                   children: [
@@ -35,12 +47,20 @@ class DashboardFooter extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: statusColor,
                         shape: BoxShape.circle,
+                        // Adding a small glow in dark mode makes status dots pop
+                        boxShadow: [
+                          if (theme.brightness == Brightness.dark)
+                            BoxShadow(
+                              color: statusColor!.withValues(alpha: 0.4),
+                              blurRadius: 4,
+                            ),
+                        ],
                       ),
                     ),
                     const SizedBox(width: 6),
                     Text(
                       isOnline ? "Connected" : "No Internet",
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      style: mutedStyle,
                     ),
                   ],
                 );

@@ -17,7 +17,6 @@ class EditExpenseSheet extends StatefulWidget {
 class _EditExpenseSheetState extends State<EditExpenseSheet> {
   final _formKey = GlobalKey<FormState>();
 
-  // Using late final to initialize controllers with existing data
   late final TextEditingController _titleController =
   TextEditingController(text: widget.expense.title);
   late final TextEditingController _amountController =
@@ -51,33 +50,38 @@ class _EditExpenseSheetState extends State<EditExpenseSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return BlocListener<ExpenseBloc, ExpenseState>(
       listener: (context, state) {
         if (state is ExpenseActionSuccess) {
-          // 1. Close the Bottom Sheet
-          Navigator.pop(context);
-
-          // 2. Close the Detail Screen and return to the List screen
-          // Passing 'true' allows the List screen to trigger a refresh if needed
-          Navigator.pop(context, true);
+          Navigator.pop(context); // Close Bottom Sheet
+          Navigator.pop(context, true); // Return to List
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
-              backgroundColor: Colors.teal,
+              // ✅ Adaptive SnackBar color
+              backgroundColor: colorScheme.primary,
               behavior: SnackBarBehavior.floating,
             ),
           );
         } else if (state is ExpenseError) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: colorScheme.error,
+              behavior: SnackBarBehavior.floating,
+            ),
           );
         }
       },
       child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          // ✅ FIX: Uses surfaceContainer for M3 elevation look
+          color: colorScheme.surfaceContainerLow,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         padding: EdgeInsets.only(
           top: 20,
@@ -91,39 +95,44 @@ class _EditExpenseSheetState extends State<EditExpenseSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Text(
                 "Edit Expense",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
-              TextFormField(
+              _buildTextField(
                 controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: "Purpose / Title",
-                  prefixIcon: Icon(Icons.edit_note),
-                  border: OutlineInputBorder(),
-                ),
+                label: "Purpose / Title",
+                icon: Icons.edit_note,
+                colorScheme: colorScheme,
                 validator: (v) => v!.isEmpty ? "Enter title" : null,
               ),
               const SizedBox(height: 15),
-              TextFormField(
+              _buildTextField(
                 controller: _amountController,
-                decoration: const InputDecoration(
-                  labelText: "Amount (KSh)",
-                  prefixIcon: Icon(Icons.payments_outlined),
-                  border: OutlineInputBorder(),
-                ),
+                label: "Amount (KSh)",
+                icon: Icons.payments_outlined,
+                colorScheme: colorScheme,
                 keyboardType: TextInputType.number,
                 validator: (v) => v!.isEmpty ? "Enter amount" : null,
               ),
               const SizedBox(height: 15),
-              TextFormField(
+              _buildTextField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: "Description",
-                  prefixIcon: Icon(Icons.description_outlined),
-                  border: OutlineInputBorder(),
-                ),
+                label: "Description",
+                icon: Icons.description_outlined,
+                colorScheme: colorScheme,
                 maxLines: 3,
               ),
               const SizedBox(height: 24),
@@ -137,18 +146,20 @@ class _EditExpenseSheetState extends State<EditExpenseSheet> {
                     child: ElevatedButton(
                       onPressed: isLoading ? null : _submit,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal,
-                        foregroundColor: Colors.white,
+                        // ✅ Matches global Teal primary
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: isLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                         height: 24,
                         width: 24,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: colorScheme.onPrimary,
                           strokeWidth: 2,
                         ),
                       )
@@ -164,6 +175,41 @@ class _EditExpenseSheetState extends State<EditExpenseSheet> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required ColorScheme colorScheme,
+    int maxLines = 1,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: colorScheme.primary),
+        filled: true,
+        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+        ),
+      ),
+      validator: validator,
     );
   }
 }

@@ -47,16 +47,20 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return BlocProvider(
       create: (context) => ProductBloc(repository: ProductRepository())
         ..add(GetProductsRequested(widget.shopId)),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F9FA),
-        appBar: _buildAppBar(),
+        // ✅ Use theme-based scaffold background
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: _buildAppBar(context),
         body: BlocBuilder<ProductBloc, ProductState>(
           builder: (context, state) {
             if (state is ProductLoading) {
-              return const Center(child: CircularProgressIndicator(color: Colors.teal));
+              return Center(child: CircularProgressIndicator(color: colorScheme.primary));
             }
 
             if (state is ProductLoaded) {
@@ -64,31 +68,41 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
               return Column(
                 children: [
-                  _buildHeader(),
+                  _buildHeader(context),
                   Expanded(
                     child: filteredProducts.isEmpty
                         ? const ProductEmptyState()
-                        : _buildProductList(filteredProducts),
+                        : _buildProductList(filteredProducts, colorScheme.primary),
                   ),
                 ],
               );
             }
-            return const Center(child: Text("Unable to load products"));
+            return Center(
+              child: Text(
+                "Unable to load products",
+                style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6)),
+              ),
+            );
           },
         ),
       ),
     );
   }
 
-  AppBar _buildAppBar() {
+  AppBar _buildAppBar(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return AppBar(
-      title: const Text("Products", style: TextStyle(fontWeight: FontWeight.bold)),
+      title: Text(
+        "Products",
+        style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+      ),
       centerTitle: true,
       actions: [
-        // Using a Builder to get the context under BlocProvider
         Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.add_circle_outline, color: Colors.teal, size: 28),
+            icon: Icon(Icons.add_circle_outline, color: colorScheme.primary, size: 28),
             onPressed: () => _navigateToAddProduct(context),
           ),
         ),
@@ -97,9 +111,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
-      color: Colors.white,
+      // ✅ Use cardColor or surface so it turns dark in dark mode
+      color: theme.cardColor,
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         children: [
@@ -116,10 +133,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
-  Widget _buildProductList(List filteredProducts) {
+  Widget _buildProductList(List filteredProducts, Color primaryColor) {
     return Builder(
       builder: (context) => RefreshIndicator(
-        color: Colors.teal,
+        color: primaryColor,
         onRefresh: () async => context.read<ProductBloc>().add(GetProductsRequested(widget.shopId)),
         child: ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -136,10 +153,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
-
-
   void _navigateToAddProduct(BuildContext context) async {
-    // Capture the Bloc reference before the async gap
     final productBloc = context.read<ProductBloc>();
 
     final success = await Navigator.push(

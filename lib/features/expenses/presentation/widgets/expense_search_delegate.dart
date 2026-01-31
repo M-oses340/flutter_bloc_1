@@ -10,6 +10,21 @@ class ExpenseSearchDelegate extends SearchDelegate {
 
   ExpenseSearchDelegate(this.shopId);
 
+  // ✅ Theme Override: Ensures the search bar background and text match your theme
+  @override
+  ThemeData appBarTheme(BuildContext context) {
+    final theme = Theme.of(context);
+    return theme.copyWith(
+      appBarTheme: theme.appBarTheme.copyWith(
+        backgroundColor: theme.colorScheme.surface,
+        iconTheme: theme.iconTheme.copyWith(color: theme.colorScheme.onSurface),
+      ),
+      inputDecorationTheme: theme.inputDecorationTheme.copyWith(
+        hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+      ),
+    );
+  }
+
   @override
   List<Widget>? buildActions(BuildContext context) {
     return [
@@ -33,7 +48,6 @@ class ExpenseSearchDelegate extends SearchDelegate {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    // Triggers the local search in the Bloc every time the query changes
     if (query.isNotEmpty) {
       context.read<ExpenseBloc>().add(SearchExpenseByTitle(query));
     }
@@ -41,32 +55,47 @@ class ExpenseSearchDelegate extends SearchDelegate {
   }
 
   Widget _buildSearchResults(BuildContext context) {
-    return BlocBuilder<ExpenseBloc, ExpenseState>(
-      builder: (context, state) {
-        if (state is ExpensesLoaded) {
-          final results = state.expenses;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-          if (results.isEmpty) {
-            return const Center(child: Text("No expenses found with that title."));
-          }
+    return Container(
+      // ✅ FIX: Match search background to theme surface
+      color: colorScheme.surface,
+      child: BlocBuilder<ExpenseBloc, ExpenseState>(
+        builder: (context, state) {
+          if (state is ExpensesLoaded) {
+            final results = state.expenses;
 
-          return ListView.builder(
-            itemCount: results.length,
-            itemBuilder: (context, index) {
-              final expense = results[index];
-              return ExpenseListTile(
-                expense: expense,
-                onTap: () {
-                  // When selected, trigger the GET by ID
-                  context.read<ExpenseBloc>().add(FetchExpenseDetailRequested(expense.id!));
-                  close(context, null); // Close search overlay
-                },
+            if (results.isEmpty) {
+              return Center(
+                child: Text(
+                  "No expenses found with that title.",
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
               );
-            },
+            }
+
+            return ListView.builder(
+              itemCount: results.length,
+              itemBuilder: (context, index) {
+                final expense = results[index];
+                return ExpenseListTile(
+                  expense: expense,
+                  onTap: () {
+                    context.read<ExpenseBloc>().add(FetchExpenseDetailRequested(expense.id!));
+                    close(context, null);
+                  },
+                );
+              },
+            );
+          }
+          return Center(
+            child: CircularProgressIndicator(color: colorScheme.primary),
           );
-        }
-        return const Center(child: CircularProgressIndicator());
-      },
+        },
+      ),
     );
   }
 }

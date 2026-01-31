@@ -12,6 +12,8 @@ class FilterChipsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final filters = ["All", "In Stock", "Low Stock", "Out of Stock"];
 
     return SingleChildScrollView(
@@ -28,15 +30,29 @@ class FilterChipsRow extends StatelessWidget {
               onSelected: (bool selected) {
                 if (selected) onFilterSelected(filter);
               },
-              selectedColor: const Color(0xFF00695C),
-              backgroundColor: Colors.white,
+
+              selectedColor: colorScheme.primary,
+
+              backgroundColor: colorScheme.surfaceContainer,
+
               labelStyle: TextStyle(
-                color: isSelected ? Colors.white : Colors.black54,
+
+                color: isSelected
+                    ? colorScheme.onPrimary
+                    : colorScheme.onSurface.withValues(alpha: 0.7),
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
               ),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              side: BorderSide(color: isSelected ? Colors.transparent : Colors.grey[300]!),
+
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+
+
+              side: isSelected
+                  ? BorderSide.none
+                  : BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+
               showCheckmark: false,
             ),
           );

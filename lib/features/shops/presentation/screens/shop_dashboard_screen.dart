@@ -12,22 +12,48 @@ class ShopDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Accessing theme and colorScheme for dynamic styling
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      appBar: _buildAppBar(),
+      // ✅ Removed Color(0xFFF8F9FA) - now uses AppTheme background
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: _buildAppBar(context),
       body: CustomScrollView(
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                const Text("Good Afternoon,", style: TextStyle(color: Colors.grey)),
-                Text(shop.ownerName, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                Text(
+                  "Good Afternoon,",
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+                Text(
+                  shop.ownerName,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
                 const SizedBox(height: 20),
                 ActiveShopCard(shop: shop),
                 const SizedBox(height: 30),
-                const Text("Quick Actions", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const Text("Access all features from one place", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                Text(
+                  "Quick Actions",
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  "Access all features from one place",
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
                 const SizedBox(height: 20),
                 DashboardActionGrid(shopId: shop.id),
               ]),
@@ -45,19 +71,33 @@ class ShopDashboardScreen extends StatelessWidget {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    final theme = Theme.of(context);
+
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      iconTheme: const IconThemeData(color: Colors.black),
-      title: const Text("Home", style: TextStyle(color: Colors.black)),
+      // ✅ Removed IconThemeData(color: Colors.black)
+      // AppBar icons will now follow theme's onSurface color
+      iconTheme: theme.appBarTheme.iconTheme,
+      title: Text(
+        "Home",
+        style: theme.appBarTheme.titleTextStyle?.copyWith(
+          color: theme.colorScheme.onSurface,
+        ),
+      ),
       actions: [
         IconButton(
           onPressed: () {},
-          icon: const CircleAvatar(
+          icon: CircleAvatar(
             radius: 14,
-            backgroundColor: Colors.teal,
-            child: Icon(Icons.person, size: 18, color: Colors.white),
+            // Uses primary color from theme (Teal)
+            backgroundColor: theme.colorScheme.primary,
+            child: Icon(
+              Icons.person,
+              size: 18,
+              color: theme.colorScheme.onPrimary,
+            ),
           ),
         ),
         const SizedBox(width: 10),

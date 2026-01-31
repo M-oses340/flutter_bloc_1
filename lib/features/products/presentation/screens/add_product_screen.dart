@@ -55,12 +55,21 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      // ✅ FIX: Use theme scaffold background
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(title: const Text("Add New Product")),
       body: BlocListener<ProductBloc, ProductState>(
         listener: (context, state) {
           if (state is ProductAddSuccess) Navigator.pop(context, true);
+          if (state is ProductError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message), backgroundColor: colorScheme.error),
+            );
+          }
         },
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -84,7 +93,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 ),
                 CustomTextInput(controller: _quantityController, label: "Initial Stock Level", icon: Icons.inventory_2_outlined, isNum: true),
                 const SizedBox(height: 32),
-                _buildSaveButton(),
+                _buildSaveButton(colorScheme),
               ],
             ),
           ),
@@ -93,18 +102,27 @@ class _AddProductScreenState extends State<AddProductScreen> {
     );
   }
 
-  Widget _buildSaveButton() {
+  Widget _buildSaveButton(ColorScheme colorScheme) {
     return BlocBuilder<ProductBloc, ProductState>(
       builder: (context, state) {
         final isAdding = state is ProductAdding;
         return SizedBox(
           width: double.infinity, height: 55,
           child: ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+            style: ElevatedButton.styleFrom(
+              // ✅ Uses your Teal (primary) and switches text to White (onPrimary)
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 0,
+            ),
             onPressed: isAdding ? null : _onSavePressed,
             child: isAdding
-                ? const CircularProgressIndicator(color: Colors.white)
-                : const Text("Save Product", style: TextStyle(color: Colors.white)),
+                ? SizedBox(
+              height: 24, width: 24,
+              child: CircularProgressIndicator(color: colorScheme.onPrimary, strokeWidth: 2),
+            )
+                : const Text("Save Product", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ),
         );
       },

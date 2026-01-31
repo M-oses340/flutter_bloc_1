@@ -21,7 +21,6 @@ class EditProductScreen extends StatefulWidget {
 class _EditProductScreenState extends State<EditProductScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers initialized directly in the field
   late final _nameController = TextEditingController(text: widget.product.name);
   late final _skuController = TextEditingController(text: widget.product.sku);
   late final _buyingPriceController = TextEditingController(text: widget.product.buyingPrice.toString());
@@ -62,8 +61,11 @@ class _EditProductScreenState extends State<EditProductScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      // ✅ FIX: Use theme background instead of Colors.white
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(title: const Text("Edit Product")),
       body: BlocListener<ProductBloc, ProductState>(
         listener: (context, state) {
@@ -94,7 +96,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
                 ),
                 CustomTextInput(controller: _quantityController, label: "Stock Quantity", icon: Icons.production_quantity_limits, isNum: true),
                 const SizedBox(height: 32),
-                _buildDoneButton(),
+                _buildDoneButton(theme),
               ],
             ),
           ),
@@ -103,18 +105,33 @@ class _EditProductScreenState extends State<EditProductScreen> {
     );
   }
 
-  Widget _buildDoneButton() {
+  Widget _buildDoneButton(ThemeData theme) {
     return BlocBuilder<ProductBloc, ProductState>(
       builder: (context, state) {
         final isLoading = state is ProductAdding;
+        final colorScheme = theme.colorScheme;
+
         return SizedBox(
-          width: double.infinity, height: 55,
+          width: double.infinity,
+          height: 55,
           child: ElevatedButton(
             onPressed: isLoading ? null : _onDonePressed,
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+            style: ElevatedButton.styleFrom(
+              // ✅ Use primary color (Teal) and onPrimary (White) from theme
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
             child: isLoading
-                ? const CircularProgressIndicator(color: Colors.white)
-                : const Text("Done", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ? SizedBox(
+              height: 24, width: 24,
+              child: CircularProgressIndicator(
+                color: colorScheme.onPrimary,
+                strokeWidth: 2,
+              ),
+            )
+                : const Text("Update Product", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ),
         );
       },

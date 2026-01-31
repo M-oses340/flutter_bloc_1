@@ -24,9 +24,13 @@ class _LoginFormState extends State<LoginForm> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Column(
       children: [
         _buildTextField(
+          context: context,
           controller: _email,
           label: "Email",
           icon: Icons.email_outlined,
@@ -34,6 +38,7 @@ class _LoginFormState extends State<LoginForm> {
         ),
         const SizedBox(height: 20),
         _buildTextField(
+          context: context,
           controller: _pass,
           label: "Password",
           icon: Icons.lock_outline,
@@ -43,16 +48,22 @@ class _LoginFormState extends State<LoginForm> {
         const SizedBox(height: 30),
         SizedBox(
           width: double.infinity,
-          height: 50,
+          height: 55, // Slightly taller for modern look
           child: widget.isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(child: CircularProgressIndicator(color: colorScheme.primary))
               : ElevatedButton(
             style: ElevatedButton.styleFrom(
+              elevation: 0, // Material 3 prefers flat or tonal buttons
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              backgroundColor: Colors.blue.shade700,
+              // ✅ FIX: Use brand primary color
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
             ),
             onPressed: () => widget.onLogin(_email.text.trim(), _pass.text),
-            child: const Text("LOGIN", style: TextStyle(color: Colors.white, fontSize: 16)),
+            child: const Text(
+                "LOGIN",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.1)
+            ),
           ),
         ),
       ],
@@ -60,26 +71,48 @@ class _LoginFormState extends State<LoginForm> {
   }
 
   Widget _buildTextField({
+    required BuildContext context,
     required TextEditingController controller,
     required String label,
     required IconData icon,
     bool isPassword = false,
     bool enabled = true,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return TextField(
       controller: controller,
       enabled: enabled,
       obscureText: isPassword ? _obscureText : false,
+      style: TextStyle(color: colorScheme.onSurface),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon),
+        labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+        prefixIcon: Icon(icon, color: colorScheme.primary),
         suffixIcon: isPassword
             ? IconButton(
-          icon: Icon(_obscureText ? Icons.visibility_off : Icons.visibility),
+          icon: Icon(
+            _obscureText ? Icons.visibility_off : Icons.visibility,
+            color: colorScheme.onSurfaceVariant,
+          ),
           onPressed: () => setState(() => _obscureText = !_obscureText),
         )
             : null,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        filled: true,
+        // ✅ FIX: Use tonal background for better dark mode visibility
+        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+        ),
       ),
     );
   }

@@ -44,17 +44,13 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     );
   }
 
-  // Inside ExpenseListScreen
   List<Expense> _getFilteredExpenses(List<Expense> expenses) {
     final query = _searchController.text.toLowerCase();
-
-    // 1. Filter based on search
     final filtered = expenses.where((e) {
       return e.title.toLowerCase().contains(query) ||
           e.description.toLowerCase().contains(query);
     }).toList();
 
-    // 2. ✅ Sort by Date (Latest first)
     filtered.sort((a, b) {
       final dateA = DateTime.tryParse(a.createdAt ?? "") ?? DateTime(0);
       final dateB = DateTime.tryParse(b.createdAt ?? "") ?? DateTime(0);
@@ -66,17 +62,23 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      // ✅ FIX: Use theme scaffold background
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text("Expenses", style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        foregroundColor: theme.appBarTheme.foregroundColor,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_circle_outline, color: Colors.redAccent, size: 28),
+            // ✅ Use theme's error color or primary instead of hardcoded redAccent
+            icon: Icon(Icons.add_circle_outline, color: colorScheme.error, size: 28),
             onPressed: () => _showAddExpenseSheet(context),
           ),
           const SizedBox(width: 8),
@@ -85,7 +87,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
       body: BlocBuilder<ExpenseBloc, ExpenseState>(
         builder: (context, state) {
           if (state is ExpenseLoading && state is! ExpensesLoaded) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(child: CircularProgressIndicator(color: colorScheme.primary));
           }
 
           if (state is ExpensesLoaded || state is ExpenseDetailLoaded || state is ExpenseActionSuccess) {
@@ -100,10 +102,10 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
 
             return Column(
               children: [
-                _buildHeader(filtered),
+                _buildHeader(context, filtered),
                 Expanded(
                   child: filtered.isEmpty
-                      ? _buildEmptyState()
+                      ? _buildEmptyState(colorScheme)
                       : _buildExpenseList(filtered),
                 ),
               ],
@@ -116,14 +118,16 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     );
   }
 
-  Widget _buildHeader(List<Expense> filtered) {
+  Widget _buildHeader(BuildContext context, List<Expense> filtered) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         boxShadow: [
           BoxShadow(
-            // ✅ Updated from withOpacity to withValues
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -137,11 +141,14 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
             child: TextField(
               controller: _searchController,
               onChanged: (_) => setState(() {}),
+              style: TextStyle(color: colorScheme.onSurface),
               decoration: InputDecoration(
                 hintText: "Search transactions...",
-                prefixIcon: const Icon(Icons.search, size: 20),
+                hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+                prefixIcon: Icon(Icons.search, size: 20, color: colorScheme.onSurfaceVariant),
                 filled: true,
-                fillColor: const Color(0xFFF1F2F6),
+                // ✅ FIX: Use tonal background for the search field
+                fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                 contentPadding: EdgeInsets.zero,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -181,15 +188,14 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(ColorScheme colorScheme) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // ✅ Updated from withOpacity to withValues
-          Icon(Icons.search_off, size: 64, color: Colors.grey.withValues(alpha: 0.3)),
+          Icon(Icons.search_off, size: 64, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
-          const Text("No expenses found", style: TextStyle(color: Colors.grey)),
+          Text("No expenses found", style: TextStyle(color: colorScheme.onSurfaceVariant)),
         ],
       ),
     );

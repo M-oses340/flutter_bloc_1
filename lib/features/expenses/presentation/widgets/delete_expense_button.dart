@@ -13,15 +13,22 @@ class DeleteExpenseButton extends StatelessWidget {
   });
 
   void _showDeleteDialog(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        // AlertDialog background and text colors are handled by the theme automatically
         title: const Text("Delete Expense"),
         content: const Text("Are you sure you want to delete this? This action cannot be undone."),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text("Cancel"),
+            // ✅ Use onSurfaceVariant for secondary actions
+            child: Text(
+                "Cancel",
+                style: TextStyle(color: colorScheme.onSurfaceVariant)
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -36,7 +43,14 @@ class DeleteExpenseButton extends StatelessWidget {
               // Go back to the List Screen (pops the Detail Screen)
               Navigator.pop(context);
             },
-            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+            // ✅ Use theme's error color for consistency
+            child: Text(
+                "Delete",
+                style: TextStyle(
+                    color: colorScheme.error,
+                    fontWeight: FontWeight.bold
+                )
+            ),
           ),
         ],
       ),
@@ -45,8 +59,11 @@ class DeleteExpenseButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return IconButton(
-      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+      // ✅ Using colorScheme.error for the icon
+      icon: Icon(Icons.delete_outline, color: colorScheme.error),
       onPressed: () => _showDeleteDialog(context),
     );
   }

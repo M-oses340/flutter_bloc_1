@@ -9,41 +9,49 @@ class ExpenseListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Column(
       children: [
         ListTile(
           onTap: onTap,
-          // Extra horizontal padding to align with your big header card
           contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
           title: Text(
             expense.title,
-            style: const TextStyle(
+            style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: Color(0xFF2D3436),
+              // ✅ FIX: Standard color that flips between black and white
+              color: colorScheme.onSurface,
             ),
           ),
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 4.0),
             child: Text(
-              // Using description + username since category isn't in your JSON
               "${expense.description} • ${expense.userName}",
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              // ✅ FIX: Muted color that stays visible in both modes
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
           trailing: Text(
             "KSh ${expense.amount.toStringAsFixed(0)}",
-            style: const TextStyle(
-              fontWeight: FontWeight.w900, // Thicker weight for premium feel
-              fontSize: 18,
-              color: Colors.black,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w900,
+              color: colorScheme.onSurface,
             ),
           ),
         ),
-        // Subtle divider that doesn't hit the edges
-        const Divider(height: 1, indent: 24, endIndent: 24, color: Color(0xFFF1F2F6)),
+        // ✅ FIX: Adaptive divider color
+        Divider(
+          height: 1,
+          indent: 24,
+          endIndent: 24,
+          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
       ],
     );
   }

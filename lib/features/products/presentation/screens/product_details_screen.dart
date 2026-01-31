@@ -35,8 +35,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     super.dispose();
   }
 
-
-
   Future<void> _handleEdit(dynamic product) async {
     final success = await Navigator.push(
       context,
@@ -48,56 +46,62 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       ),
     );
 
-
     if (success == true && mounted) {
       _productBloc.add(GetProductDetailsRequested(widget.productId));
     }
   }
 
   void _showDeleteConfirm(dynamic product) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        // AlertDialog background automatically follows theme.dialogBackgroundColor
         title: const Text("Delete Product?"),
         content: Text("Are you sure you want to delete ${product.name}? This action cannot be undone."),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text("Cancel"),
+            child: Text("Cancel", style: TextStyle(color: colorScheme.onSurfaceVariant)),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(dialogContext); // Close dialog
+              Navigator.pop(dialogContext);
               _productBloc.add(DeleteProductRequested(widget.productId, widget.shopId));
             },
-            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+            child: Text("Delete", style: TextStyle(color: colorScheme.error, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
 
-  // --- BUILD METHOD ---
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return BlocProvider.value(
       value: _productBloc,
       child: Scaffold(
-        backgroundColor: Colors.white,
+        // ✅ FIX: Use theme-based scaffold background
+        backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
           title: const Text("Product Details"),
-          actions: [_buildPopupMenu()],
+          actions: [_buildPopupMenu(colorScheme)],
         ),
         body: BlocListener<ProductBloc, ProductState>(
           listener: (context, state) {
             if (state is ProductAddSuccess) {
-
               Navigator.pop(context, true);
             }
             if (state is ProductError) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: colorScheme.error,
+                ),
               );
             }
           },
@@ -105,7 +109,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             buildWhen: (p, c) => c is ProductDetailsLoaded || c is ProductLoading || c is ProductError,
             builder: (context, state) {
               if (state is ProductLoading) {
-                return const Center(child: CircularProgressIndicator(color: Colors.teal));
+                return Center(child: CircularProgressIndicator(color: colorScheme.primary));
               }
 
               if (state is ProductDetailsLoaded) {
@@ -130,7 +134,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               }
 
               if (state is ProductError) {
-                return Center(child: Text(state.message, style: const TextStyle(color: Colors.red)));
+                return Center(
+                  child: Text(
+                    state.message,
+                    style: TextStyle(color: colorScheme.error),
+                  ),
+                );
               }
 
               return const SizedBox();
@@ -141,7 +150,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  Widget _buildPopupMenu() {
+  Widget _buildPopupMenu(ColorScheme colorScheme) {
     return BlocBuilder<ProductBloc, ProductState>(
       builder: (context, state) {
         if (state is! ProductDetailsLoaded) return const SizedBox();
@@ -149,23 +158,23 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         return PopupMenuButton<String>(
           onSelected: (val) => val == 'edit' ? _handleEdit(product) : _showDeleteConfirm(product),
           itemBuilder: (context) => [
-            const PopupMenuItem(
+            PopupMenuItem(
                 value: 'edit',
                 child: Row(
                   children: [
-                    Icon(Icons.edit, size: 20),
-                    SizedBox(width: 8),
-                    Text("Edit Product"),
+                    Icon(Icons.edit, size: 20, color: colorScheme.onSurface),
+                    const SizedBox(width: 8),
+                    const Text("Edit Product"),
                   ],
                 )
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
                 value: 'delete',
                 child: Row(
                   children: [
-                    Icon(Icons.delete, size: 20, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text("Delete", style: TextStyle(color: Colors.red)),
+                    Icon(Icons.delete, size: 20, color: colorScheme.error),
+                    const SizedBox(width: 8),
+                    Text("Delete", style: TextStyle(color: colorScheme.error)),
                   ],
                 )
             ),

@@ -16,6 +16,9 @@ class CustomTextInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: TextFormField(
@@ -23,18 +26,35 @@ class CustomTextInput extends StatelessWidget {
         keyboardType: isNum
             ? const TextInputType.numberWithOptions(decimal: true)
             : TextInputType.text,
+        // ✅ Text style automatically adjusts to theme
+        style: TextStyle(color: colorScheme.onSurface),
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, color: Colors.teal, size: 22),
+          labelStyle: TextStyle(
+            color: colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+          prefixIcon: Icon(
+            icon,
+            color: colorScheme.primary, // Uses your Teal brand color
+            size: 22,
+          ),
           filled: true,
-          fillColor: Colors.grey[50],
+          // ✅ Uses a subtle surface color instead of hardcoded white/grey
+          fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey[200]!),
+            borderSide: BorderSide(color: theme.dividerColor),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey[200]!),
+            borderSide: BorderSide(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
           ),
         ),
         validator: (value) => (value == null || value.isEmpty) ? "Required" : null,

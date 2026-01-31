@@ -29,32 +29,31 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
 
   void _submitData() {
     if (_formKey.currentState!.validate()) {
-      // Create the model instance using the validated data
       final newExpense = Expense(
         title: _titleController.text.trim(),
         amount: double.tryParse(_amountController.text) ?? 0.0,
         description: _descController.text.trim(),
         shopId: widget.shopId,
-        userName: "Staff", // Replace with dynamic user if available
+        userName: "Staff",
         createdAt: DateTime.now().toIso8601String(),
       );
 
-      // Dispatch the event to the Bloc
       context.read<ExpenseBloc>().add(AddExpenseRequested(newExpense));
-
-      // Close the bottom sheet
       Navigator.pop(context);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Material(
-      color: Colors.white,
+      // ✅ FIX: Use surface color instead of white
+      color: colorScheme.surfaceContainerLow,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       child: Padding(
         padding: EdgeInsets.only(
-          // Pushes the sheet up when the keyboard appears
           bottom: MediaQuery.of(context).viewInsets.bottom + 24,
           left: 24,
           right: 24,
@@ -66,59 +65,45 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Visual handle for sliding
               Center(
                 child: Container(
                   width: 40,
                   height: 5,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    // ✅ FIX: Adaptive handle color
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
               ),
               const SizedBox(height: 24),
-              const Text(
+              Text(
                 "New Expense",
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
               ),
               const SizedBox(height: 24),
 
-              // Title Field
-              TextFormField(
+              _buildField(
                 controller: _titleController,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  labelText: "Title",
-                  hintText: "What was this for?",
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                  prefixIcon: const Icon(Icons.edit_note),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
+                label: "Title",
+                hint: "What was this for?",
+                icon: Icons.edit_note,
+                colorScheme: colorScheme,
                 validator: (v) => v!.isEmpty ? "Please enter a title" : null,
               ),
               const SizedBox(height: 16),
 
-              // Amount Field
-              TextFormField(
+              _buildField(
                 controller: _amountController,
+                label: "Amount",
+                prefixText: "KSh ",
+                icon: Icons.payments_outlined,
+                colorScheme: colorScheme,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: "Amount",
-                  prefixText: "KSh ",
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                  prefixIcon: const Icon(Icons.payments_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
                 validator: (v) {
                   if (v == null || v.isEmpty) return "Please enter an amount";
                   if (double.tryParse(v) == null) return "Enter a valid number";
@@ -127,29 +112,21 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
               ),
               const SizedBox(height: 16),
 
-              // Description Field
-              TextFormField(
+              _buildField(
                 controller: _descController,
+                label: "Description (Optional)",
+                icon: Icons.description_outlined,
+                colorScheme: colorScheme,
                 maxLines: 2,
-                decoration: InputDecoration(
-                  labelText: "Description (Optional)",
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                  prefixIcon: const Icon(Icons.description_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
               ),
               const SizedBox(height: 32),
 
-              // Save Button
               ElevatedButton(
                 onPressed: _submitData,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  foregroundColor: Colors.white,
+                  // ✅ FIX: Use brand error/primary color
+                  backgroundColor: colorScheme.error,
+                  foregroundColor: colorScheme.onError,
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -165,6 +142,48 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
           ),
         ),
       ),
+    );
+  }
+
+  // Helper to keep the code clean and consistent
+  Widget _buildField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required ColorScheme colorScheme,
+    String? hint,
+    String? prefixText,
+    int maxLines = 1,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      style: TextStyle(color: colorScheme.onSurface),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixText: prefixText,
+        prefixIcon: Icon(icon, color: colorScheme.primary),
+        filled: true,
+        // ✅ FIX: Tonal background for fields
+        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+        ),
+      ),
+      validator: validator,
     );
   }
 }

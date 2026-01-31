@@ -61,7 +61,6 @@ class DashboardActionGrid extends StatelessWidget {
         "Expenses",
         Colors.redAccent,
         onTap: () {
-          // Trigger fetch before navigating for a snappier feel
           context.read<ExpenseBloc>().add(FetchExpensesRequested(shopId));
           Navigator.push(
               context,
@@ -88,13 +87,20 @@ class _ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Access the current theme
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        // ✅ FIX 1: Use cardColor instead of Colors.white
+        // This becomes Dark Grey in dark mode automatically.
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
+            // Adjusted shadow for dark mode visibility
+              color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? 0.2 : 0.03),
               blurRadius: 10,
               offset: const Offset(0, 5)
           )
@@ -114,7 +120,13 @@ class _ActionCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             title,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              // ✅ FIX 2: Explicitly use onSurface
+              // (Black in Light mode, White in Dark mode)
+              color: colorScheme.onSurface,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),

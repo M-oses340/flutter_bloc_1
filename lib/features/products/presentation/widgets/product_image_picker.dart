@@ -4,7 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 class ProductImagePicker extends StatelessWidget {
   final File? selectedImage;
-  final String? initialImageUrl; // Added for Edit mode
+  final String? initialImageUrl;
   final Function(File) onImageSelected;
 
   const ProductImagePicker({
@@ -16,6 +16,9 @@ class ProductImagePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return GestureDetector(
       onTap: () async {
         final picker = ImagePicker();
@@ -26,24 +29,55 @@ class ProductImagePicker extends StatelessWidget {
         height: 180,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          // ✅ FIX: Uses a tonal surface color that darkens for Dark Mode
+          color: colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(
+            // ✅ FIX: Uses theme's outline variant instead of hardcoded grey
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: _buildImageContent(),
+          child: _buildImageContent(colorScheme),
         ),
       ),
     );
   }
 
-  Widget _buildImageContent() {
+  Widget _buildImageContent(ColorScheme colorScheme) {
     if (selectedImage != null) {
       return Image.file(selectedImage!, fit: BoxFit.cover, width: double.infinity);
     } else if (initialImageUrl != null && initialImageUrl!.isNotEmpty) {
-      return Image.network(initialImageUrl!, fit: BoxFit.cover, width: double.infinity);
+      return Image.network(
+        initialImageUrl!,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        errorBuilder: (context, error, stackTrace) => _buildPlaceholder(colorScheme),
+      );
     }
-    return const Icon(Icons.add_a_photo_outlined, size: 40, color: Colors.teal);
+    return _buildPlaceholder(colorScheme);
+  }
+
+  Widget _buildPlaceholder(ColorScheme colorScheme) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.add_a_photo_outlined,
+          size: 40,
+          // ✅ FIX: Uses theme's primary (Teal)
+          color: colorScheme.primary,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "Tap to upload product image",
+          style: TextStyle(
+            color: colorScheme.onSurfaceVariant,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
   }
 }

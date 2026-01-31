@@ -13,9 +13,19 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // We grab the theme data once at the top for easy access
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
+      // Uses scaffoldBackgroundColor from your AppTheme
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("My Shops"),
+        title: Text(
+            "My Shops",
+            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)
+        ),
+
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -31,24 +41,46 @@ class HomeScreen extends StatelessWidget {
           builder: (context, state) {
             if (state is ShopLoading) {
               return const Center(child: CircularProgressIndicator());
-            } else if (state is ShopLoaded) {
+            }
+
+            if (state is ShopLoaded) {
               if (state.shops.isEmpty) {
-                return const Center(child: Text("No shops found."));
+                return Center(
+                  child: Text(
+                    "No shops found.",
+                    // Uses the onSurface color which is white in Dark and black in Light
+                    style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6)),
+                  ),
+                );
               }
               return ListView.builder(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 itemCount: state.shops.length,
                 itemBuilder: (context, index) => ShopCard(shop: state.shops[index]),
               );
-            } else if (state is ShopError) {
+            }
+
+            if (state is ShopError) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(state.message, style: const TextStyle(color: Colors.red)),
-                    ElevatedButton(
+
+                    Icon(Icons.error_outline, color: colorScheme.error, size: 48),
+                    const SizedBox(height: 16),
+                    Text(
+                        state.message,
+                        style: TextStyle(color: colorScheme.error)
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
                       onPressed: () => context.read<ShopBloc>().add(FetchShops()),
-                      child: const Text("Retry"),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text("Retry"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
+                      ),
                     )
                   ],
                 ),

@@ -16,13 +16,20 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
+          // ✅ FIX: Use dynamic gradient based on brand colors
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.blue.shade900, Colors.blue.shade500],
+            colors: isDark
+                ? [colorScheme.surface, colorScheme.primaryContainer.withValues(alpha: 0.2)]
+                : [colorScheme.primary.withValues(alpha: 0.8), colorScheme.primary],
           ),
         ),
         child: BlocProvider(
@@ -45,8 +52,15 @@ class LoginScreen extends StatelessWidget {
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(30),
                   child: Card(
-                    elevation: 8,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    // ✅ FIX: Use tonal elevation (M3 standard)
+                    elevation: isDark ? 0 : 8,
+                    color: isDark ? colorScheme.surfaceContainerLow : theme.cardColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      side: isDark
+                          ? BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.2))
+                          : BorderSide.none,
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(25),
                       child: Column(

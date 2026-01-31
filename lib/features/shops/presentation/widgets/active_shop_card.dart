@@ -8,51 +8,81 @@ class ActiveShopCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F5E9),
+
+        color: colorScheme.primaryContainer.withValues(alpha: isDark ? 0.2 : 0.4),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.green.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: colorScheme.primary.withValues(alpha: 0.1),
+        ),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.teal[400],
+
+              color: colorScheme.primary,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.business, color: Colors.white),
+            child: Icon(Icons.business, color: colorScheme.onPrimary),
           ),
           const SizedBox(width: 15),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Active Shop", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                Text(shop.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(
+                  "Active Shop",
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  shop.name,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
               ],
             ),
           ),
-          if (shop.isActive) _buildLiveBadge(),
+          if (shop.isActive) _buildLiveBadge(colorScheme),
         ],
       ),
     );
   }
 
-  Widget _buildLiveBadge() {
+  Widget _buildLiveBadge(ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.green,
+
+        color: Colors.green[700],
         borderRadius: BorderRadius.circular(20),
       ),
-      child: const Row(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          CircleAvatar(radius: 3, backgroundColor: Colors.white),
-          SizedBox(width: 5),
-          Text("Live", style: TextStyle(color: Colors.white, fontSize: 12)),
+          const CircleAvatar(radius: 3, backgroundColor: Colors.white),
+          const SizedBox(width: 5),
+          Text(
+            "Live",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );

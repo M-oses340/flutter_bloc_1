@@ -11,13 +11,11 @@ class ExpenseDetailScreen extends StatelessWidget {
 
   const ExpenseDetailScreen({super.key, required this.expense});
 
-  // --- ACTIONS ---
-
   void _handleEdit(BuildContext context, Expense currentExpense) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.transparent, // Keeps the sheet's internal styling
       builder: (_) => BlocProvider.value(
         value: context.read<ExpenseBloc>(),
         child: EditExpenseSheet(expense: currentExpense),
@@ -26,6 +24,8 @@ class ExpenseDetailScreen extends StatelessWidget {
   }
 
   void _showDeleteConfirm(BuildContext context, Expense currentExpense) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -34,74 +34,73 @@ class ExpenseDetailScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text("Cancel"),
+            child: Text("Cancel", style: TextStyle(color: colorScheme.onSurfaceVariant)),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(dialogContext); // Close dialog
+              Navigator.pop(dialogContext);
               context.read<ExpenseBloc>().add(DeleteExpenseRequested(currentExpense));
-              Navigator.pop(context); // Return to list screen
+              Navigator.pop(context);
             },
-            child: const Text("Delete", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: Text(
+                "Delete",
+                style: TextStyle(color: colorScheme.error, fontWeight: FontWeight.bold)
+            ),
           ),
         ],
       ),
     );
   }
 
-  // --- BUILD METHOD ---
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return BlocBuilder<ExpenseBloc, ExpenseState>(
       builder: (context, state) {
-        // ✅ DYNAMIC DATA LOGIC
-        // We check for ExpenseDetailLoaded to get the fresh data.
-        // If the state is something else (like Success or Loading), we still
-        // want to show the 'expense' but we need to be careful it's not stale.
-        // This is why emitting ExpenseDetailLoaded in your Bloc is so important!
-
         final current = (state is ExpenseDetailLoaded) ? state.expense : expense;
 
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: theme.scaffoldBackgroundColor,
           appBar: AppBar(
             title: const Text("Expense Details", style: TextStyle(fontWeight: FontWeight.bold)),
             centerTitle: true,
+            // ✅ Removal of hardcoded black/white for adaptive theme logic
+            backgroundColor: theme.appBarTheme.backgroundColor,
+            foregroundColor: theme.appBarTheme.foregroundColor,
             elevation: 0,
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
             actions: [
-              _buildPopupMenu(context, current),
+              _buildPopupMenu(context, current, colorScheme),
             ],
           ),
-          body: _buildBody(current),
+          body: _buildBody(context, current),
         );
       },
     );
   }
 
-  Widget _buildPopupMenu(BuildContext context, Expense current) {
+  Widget _buildPopupMenu(BuildContext context, Expense current, ColorScheme colorScheme) {
     return PopupMenuButton<String>(
       onSelected: (val) => val == 'edit' ? _handleEdit(context, current) : _showDeleteConfirm(context, current),
       itemBuilder: (context) => [
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'edit',
           child: Row(
             children: [
-              Icon(Icons.edit_outlined, size: 20),
-              SizedBox(width: 8),
-              Text("Edit Expense"),
+              Icon(Icons.edit_outlined, size: 20, color: colorScheme.onSurface),
+              const SizedBox(width: 8),
+              const Text("Edit Expense"),
             ],
           ),
         ),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'delete',
           child: Row(
             children: [
-              Icon(Icons.delete_outline, size: 20, color: Colors.red),
-              SizedBox(width: 8),
-              Text("Delete", style: TextStyle(color: Colors.red)),
+              Icon(Icons.delete_outline, size: 20, color: colorScheme.error),
+              const SizedBox(width: 8),
+              Text("Delete", style: TextStyle(color: colorScheme.error)),
             ],
           ),
         ),
@@ -109,54 +108,71 @@ class ExpenseDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBody(Expense e) {
+  Widget _buildBody(BuildContext context, Expense e) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final mutedStyle = TextStyle(
+        color: colorScheme.onSurfaceVariant,
+        fontSize: 12,
+        letterSpacing: 1.2
+    );
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("PURPOSE", style: TextStyle(color: Colors.grey, fontSize: 12, letterSpacing: 1.2)),
+          Text("PURPOSE", style: mutedStyle),
           const SizedBox(height: 4),
-          Text(e.title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          Text(
+              e.title,
+              style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)
+          ),
 
           const SizedBox(height: 24),
 
-          const Text("AMOUNT", style: TextStyle(color: Colors.grey, fontSize: 12, letterSpacing: 1.2)),
+          Text("AMOUNT", style: mutedStyle),
           const SizedBox(height: 4),
           Text(
             "KSh ${e.amount.toStringAsFixed(2)}",
-            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.redAccent),
+            style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w900,
+                color: colorScheme.error // Consistent red for expenses
+            ),
           ),
 
-          const Divider(height: 48, thickness: 1),
+          Divider(height: 48, thickness: 1, color: theme.dividerColor),
 
-          const Text("DETAILS", style: TextStyle(color: Colors.grey, fontSize: 12, letterSpacing: 1.2)),
+          Text("DETAILS", style: mutedStyle),
           const SizedBox(height: 12),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey.shade50,
+              // ✅ FIX: Using tonal container instead of grey.shade50
+              color: colorScheme.surfaceContainerLow,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
+              border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
             ),
             child: Text(
               e.description.isNotEmpty ? e.description : "No additional details provided.",
-              style: const TextStyle(fontSize: 16, height: 1.6, color: Colors.black87),
+              style: theme.textTheme.bodyLarge?.copyWith(height: 1.6),
             ),
           ),
 
           const SizedBox(height: 40),
 
-          _buildInfoRow(Icons.person_outline, "Created By", e.userName ?? "System"),
-          _buildInfoRow(Icons.calendar_today_outlined, "Date", _formatDate(e.createdAt)),
-          _buildInfoRow(Icons.storefront_outlined, "Shop ID", e.shopId.toString()),
+          _buildInfoRow(context, Icons.person_outline, "Created By", e.userName ?? "System"),
+          _buildInfoRow(context, Icons.calendar_today_outlined, "Date", _formatDate(e.createdAt)),
+          _buildInfoRow(context, Icons.storefront_outlined, "Shop ID", e.shopId.toString()),
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildInfoRow(BuildContext context, IconData icon, String label, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 20.0),
       child: Row(
@@ -164,17 +180,20 @@ class ExpenseDetailScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.03),
+                color: colorScheme.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle
             ),
-            child: Icon(icon, size: 18, color: Colors.blue.shade700),
+            child: Icon(icon, size: 18, color: colorScheme.primary),
           ),
           const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-              Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              Text(label, style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 11)),
+              Text(
+                  value,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)
+              ),
             ],
           ),
         ],
