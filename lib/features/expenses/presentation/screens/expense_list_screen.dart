@@ -6,158 +6,148 @@ import '../../bloc/expense_state.dart';
 import '../../data/models/expense_model.dart';
 import '../widgets/expense_list_tile.dart';
 import '../widgets/expense_summary_card.dart';
-import '../widgets/expense_search_delegate.dart';
 import 'expense_detail_screen.dart';
 
-class ExpenseListScreen extends StatelessWidget {
+class ExpenseListScreen extends StatefulWidget {
   final int shopId;
-
   const ExpenseListScreen({super.key, required this.shopId});
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  State<ExpenseListScreen> createState() => _ExpenseListScreenState();
+}
 
+class _ExpenseListScreenState extends State<ExpenseListScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Expense> _getFilteredExpenses(List<Expense> expenses) {
+    final query = _searchController.text.toLowerCase();
+    return expenses.where((e) {
+      return e.title.toLowerCase().contains(query) ||
+          e.description.toLowerCase().contains(query);
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF8F9FA),
+
       appBar: AppBar(
-        elevation: 0,
+        title: const Text("Expenses", style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        centerTitle: false,
-        title: const Text(
-          "Expenses",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search_rounded),
-            onPressed: () => showSearch(
-              context: context,
-              delegate: ExpenseSearchDelegate(shopId),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert_rounded),
-            onPressed: () {},
-          ),
-        ],
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
       ),
       body: BlocListener<ExpenseBloc, ExpenseState>(
         listener: (context, state) {
           if (state is ExpenseDetailLoaded) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ExpenseDetailScreen(expense: state.expense),
-              ),
-            );
-          } else if (state is ExpenseError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.redAccent,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (_) => ExpenseDetailScreen(expense: state.expense)));
           }
         },
         child: BlocBuilder<ExpenseBloc, ExpenseState>(
           builder: (context, state) {
-            if (state is ExpenseLoading) {
-              return const Center(child: CircularProgressIndicator.adaptive());
-            }
+            if (state is ExpenseLoading) return const Center(child: CircularProgressIndicator());
 
-            // Logic to ensure list is visible even in DetailLoaded state
             if (state is ExpensesLoaded || state is ExpenseDetailLoaded) {
-              final List<Expense> currentList = (state is ExpensesLoaded)
-                  ? state.expenses
-                  : (state as ExpenseDetailLoaded).allExpenses;
+              final all = (state is ExpensesLoaded) ? state.allExpenses : (state as ExpenseDetailLoaded).allExpenses;
+              final filtered = _getFilteredExpenses(all);
 
-              return RefreshIndicator(
-                color: theme.primaryColor,
-                onRefresh: () async => context
-                    .read<ExpenseBloc>()
-                    .add(FetchExpensesRequested(shopId)),
-                child: CustomScrollView(
-                  physics: const BouncingScrollPhysics(
-                    parent: AlwaysScrollableScrollPhysics(),
-                  ),
-                  slivers: [
-                    // 1. Summary Header
-                    SliverToBoxAdapter(
-                      child: ExpenseSummaryCard(expenses: currentList),
+              return Column(
+                children: [
+                  // FIXED HEADER with subtle shadow to separate from the list
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
+                    padding: const EdgeInsets.only(bottom: 12), // Tighter bottom padding
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: (_) => setState(() {}),
+                            decoration: InputDecoration(
+                              hintText: "Search transactions...",
+                              prefixIcon: const Icon(Icons.search, size: 20),
+                              filled: true,
+                              fillColor: const Color(0xFFF1F2F6),
+                              contentPadding: EdgeInsets.zero,
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Summary card now sits closer to the search bar
+                        ExpenseSummaryCard(expenses: filtered),
+                      ],
+                    ),
+                  ),
 
-                    // 2. Section Title
-                    const SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
-                        child: Text(
-                          "Recent Transactions",
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blueGrey,
-                            letterSpacing: 0.3,
+                  // SCROLLABLE LIST
+                  Expanded(
+                    child: filtered.isEmpty
+                        ? _buildEmptyState()
+                        : RefreshIndicator(
+                      onRefresh: () async => context.read<ExpenseBloc>().add(FetchExpensesRequested(widget.shopId)),
+                      child: ListView.builder(
+                        // Standardized padding
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) => ExpenseListTile(
+                          expense: filtered[index],
+                          onTap: () => context.read<ExpenseBloc>().add(
+                            FetchExpenseDetailRequested(filtered[index].id!),
                           ),
                         ),
                       ),
                     ),
-
-                    // 3. Scrollable List
-                    currentList.isEmpty
-                        ? const SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: Center(
-                        child: Text("No expenses found for this period."),
-                      ),
-                    )
-                        : SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 100),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                            final expense = currentList[index];
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 4.0),
-                              child: ExpenseListTile(
-                                expense: expense,
-                                onTap: () => context.read<ExpenseBloc>().add(
-                                  FetchExpenseDetailRequested(expense.id!),
-                                ),
-                              ),
-                            );
-                          },
-                          childCount: currentList.length,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               );
             }
-
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey[300]),
-                  const SizedBox(height: 16),
-                  const Text("Tap 'Add Expense' to get started"),
-                ],
-              ),
-            );
+            return const Center(child: Text("Unable to load expenses."));
           },
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Colors.redAccent,
-        icon: const Icon(Icons.add, color: Colors.white),
+        elevation: 4,
         label: const Text("Add Expense", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        icon: const Icon(Icons.add, color: Colors.white),
         onPressed: () {
-          // BottomSheet or Navigation to CreateExpenseScreen
+          // TODO: Open Create Expense Screen
         },
+      ),
+    );
+  }
+
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.search_off, size: 64, color: Colors.grey.withValues(alpha: 0.3)),
+          const SizedBox(height: 16),
+          const Text("No expenses found", style: TextStyle(color: Colors.grey)),
+        ],
       ),
     );
   }

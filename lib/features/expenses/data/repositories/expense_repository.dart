@@ -41,8 +41,6 @@ class ExpenseRepository {
         headers: await _getHeaders(),
       );
 
-      print("📡 Requesting: $url");
-      print("✅ Status: ${response.statusCode}");
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
@@ -50,11 +48,9 @@ class ExpenseRepository {
         final List data = body['data'] ?? body['results'] ?? [];
         return data.map((e) => Expense.fromJson(e)).toList();
       } else {
-        print("❌ Server Error Body: ${response.body}");
         throw Exception("Server Error: ${response.statusCode}");
       }
     } catch (e) {
-      print("🚀 Repository Error: $e");
       rethrow;
     }
   }

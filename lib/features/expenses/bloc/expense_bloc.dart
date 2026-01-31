@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../data/models/expense_model.dart';
-import '../data/repositories/expense_repository.dart';
+import '../data/repositories/expense_repository.dart'; // Ensure this path is correct
 import 'expense_event.dart';
 import 'expense_state.dart';
 
@@ -9,7 +9,6 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
 
   ExpenseBloc({required this.repository}) : super(ExpenseInitial()) {
 
-    // 1. Fetch All (Initial Load)
     on<FetchExpensesRequested>((event, emit) async {
       emit(ExpenseLoading());
       try {
@@ -20,29 +19,26 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
       }
     });
 
-    // 2. Local Search (Filters the list by Title)
     on<SearchExpenseByTitle>((event, emit) {
-      if (state is ExpensesLoaded) {
-        final currentState = state as ExpensesLoaded;
+      final currentState = state;
+      if (currentState is ExpensesLoaded || currentState is ExpenseDetailLoaded) {
+        // Get the full list from whichever state we are currently in
+        final List<Expense> pool = (currentState is ExpensesLoaded)
+            ? currentState.allExpenses
+            : (currentState as ExpenseDetailLoaded).allExpenses;
+
         if (event.query.isEmpty) {
-          emit(ExpensesLoaded(
-              expenses: currentState.allExpenses,
-              allExpenses: currentState.allExpenses
-          ));
+          emit(ExpensesLoaded(expenses: pool, allExpenses: pool));
         } else {
-          final filtered = currentState.allExpenses
+          final filtered = pool
               .where((e) => e.title.toLowerCase().contains(event.query.toLowerCase()))
               .toList();
-          emit(ExpensesLoaded(
-              expenses: filtered,
-              allExpenses: currentState.allExpenses
-          ));
+          emit(ExpensesLoaded(expenses: filtered, allExpenses: pool));
         }
       }
     });
 
     on<FetchExpenseDetailRequested>((event, emit) async {
-      // Preserve current list to prevent the "Empty Screen" when navigating back
       List<Expense> currentExpenses = [];
       if (state is ExpensesLoaded) {
         currentExpenses = (state as ExpensesLoaded).allExpenses;
@@ -51,9 +47,7 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
       }
 
       try {
-        // USE event.expenseId HERE (matches your event class)
         final expenseDetail = await repository.fetchExpenseById(event.expenseId);
-
         emit(ExpenseDetailLoaded(
           expense: expenseDetail,
           allExpenses: currentExpenses,
@@ -63,22 +57,10 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
       }
     });
 
-    // 4. Create (POST)
-    on<CreateExpenseRequested>((event, emit) async {
-      try {
-        // We pass event.expense (the model) to fix the type assignment error
-        await repository.addExpense(event.expense);
-        emit(ExpenseActionSuccess("Expense created successfully"));
-      } catch (e) {
-        emit(ExpenseError(e.toString()));
-      }
-    });
-
-    // 5. Delete
     on<DeleteExpenseRequested>((event, emit) async {
       try {
         await repository.deleteExpense(event.expenseId);
-        emit(ExpenseActionSuccess("Expense removed"));
+        // Refresh the list after deletion to keep UI in sync
         add(FetchExpensesRequested(event.shopId));
       } catch (e) {
         emit(ExpenseError(e.toString()));
