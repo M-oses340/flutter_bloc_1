@@ -6,8 +6,8 @@ import '../../../products/data/repositories/product_repository.dart';
 import '../../bloc/category_bloc.dart';
 import '../../data/models/category_model.dart';
 import '../widgets/delete_category_dialog.dart';
-import '../widgets/category_info_card.dart';     // New Import
-import '../widgets/category_product_list.dart'; // New Import
+import '../widgets/category_info_card.dart';
+import '../widgets/category_product_list.dart';
 
 class CategoryDetailScreen extends StatelessWidget {
   final Category category;
