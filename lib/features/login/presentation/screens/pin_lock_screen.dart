@@ -24,16 +24,14 @@ class _PinLockScreenState extends State<PinLockScreen> {
     if (_pin.length < 4) {
       setState(() => _pin += value);
       if (_pin.length == 4) {
-        context.read<LoginBloc>().add(
-          LoginButtonPressed(email: widget.email, password: _pin),
-        );
+        // PIN is same as password used in login function
+        context.read<LoginBloc>().add(PinUnlocked(pin: _pin));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Accessing your theme data
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -46,13 +44,12 @@ class _PinLockScreenState extends State<PinLockScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.error),
-              backgroundColor: colorScheme.error, // Uses theme error color
+              backgroundColor: colorScheme.error,
             ),
           );
         }
       },
       child: Scaffold(
-        // Uses scaffoldBackgroundColor from your AppTheme
         backgroundColor: theme.scaffoldBackgroundColor,
         body: SafeArea(
           child: BlocBuilder<LoginBloc, LoginState>(
@@ -96,18 +93,33 @@ class _PinLockScreenState extends State<PinLockScreen> {
                           ),
                         ),
                       ),
+
+                      const SizedBox(height: 20),
+                      TextButton.icon(
+                        onPressed: isLoading
+                            ? null
+                            : () => context.read<AuthBloc>().add(UserLoggedOut()),
+                        icon: const Icon(Icons.logout, color: Colors.redAccent),
+                        label: const Text(
+                          "Logout",
+                          style: TextStyle(
+                            color: Colors.redAccent,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+
                       const SizedBox(height: 40),
                     ],
                   ),
 
                   if (isLoading)
                     Container(
-                      color: theme.scaffoldBackgroundColor.withOpacity(0.7),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          // Uses primaryTeal defined in your colorSchemeSeed
-                          color: colorScheme.primary,
-                        ),
+                      // UPDATED: Used withValues instead of withOpacity
+                      color: theme.scaffoldBackgroundColor.withValues(alpha: 0.7),
+                      child: const Center(
+                        child: CircularProgressIndicator(),
                       ),
                     ),
                 ],

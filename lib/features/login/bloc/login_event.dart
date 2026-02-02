@@ -17,3 +17,10 @@ class LoginButtonPressed extends LoginEvent {
   @override
   List<Object?> get props => [email, password];
 }
+
+class PinUnlocked extends LoginEvent {
+  final String pin;
+
+  // Remove the refreshToken from the constructor
+  const PinUnlocked({required this.pin});
+}

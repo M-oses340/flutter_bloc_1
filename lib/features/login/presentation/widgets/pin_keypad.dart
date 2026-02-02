@@ -56,7 +56,7 @@ class PinKeypad extends StatelessWidget {
         height: 80,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          // Uses cardColor from your AppTheme (White in Light, Dark Grey in Dark)
+
           color: theme.cardColor,
           boxShadow: [
             BoxShadow(

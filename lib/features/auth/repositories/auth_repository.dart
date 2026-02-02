@@ -5,10 +5,9 @@ import '../../../../core/constants/api_constants.dart';
 import '../../../core/utils/storage_service.dart';
 import '../data/models/auth_response.dart';
 
-
 class AuthRepository {
+  // Existing login method...
   Future<AuthResponse> login(String email, String password) async {
-
     final response = await http.post(
       Uri.parse("${ApiConstants.baseUrl}auth/v1/auth/login/"),
       headers: {
@@ -20,11 +19,15 @@ class AuthRepository {
 
     final data = jsonDecode(response.body);
     if (response.statusCode == 200 || response.statusCode == 201) {
-
-
       return AuthResponse.fromJson(data);
     } else {
       throw data['message'] ?? "Authentication failed";
     }
+  }
+
+  // NEW: Helper method for the PIN screen
+  Future<AuthResponse> unlockWithPin(String email, String pin) async {
+    // Since PIN = Password, we just call the login method
+    return await login(email, pin);
   }
 }
