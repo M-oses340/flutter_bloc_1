@@ -40,7 +40,7 @@ class _LoginFormState extends State<LoginForm> {
         _buildTextField(
           context: context,
           controller: _pass,
-          label: "Password",
+          label: "Pin",
           icon: Icons.lock_outline,
           isPassword: true,
           enabled: !widget.isLoading,
@@ -48,14 +48,14 @@ class _LoginFormState extends State<LoginForm> {
         const SizedBox(height: 30),
         SizedBox(
           width: double.infinity,
-          height: 55, // Slightly taller for modern look
+          height: 55,
           child: widget.isLoading
               ? Center(child: CircularProgressIndicator(color: colorScheme.primary))
               : ElevatedButton(
             style: ElevatedButton.styleFrom(
-              elevation: 0, // Material 3 prefers flat or tonal buttons
+              elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              // ✅ FIX: Use brand primary color
+              //
               backgroundColor: colorScheme.primary,
               foregroundColor: colorScheme.onPrimary,
             ),
@@ -99,7 +99,7 @@ class _LoginFormState extends State<LoginForm> {
         )
             : null,
         filled: true,
-        // ✅ FIX: Use tonal background for better dark mode visibility
+        //
         fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
