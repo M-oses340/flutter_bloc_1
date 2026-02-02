@@ -26,17 +26,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         return;
       }
 
-      // 3. If not locked and token exists, proceed to Home
+
       if (token != null) {
         emit(Authenticated());
       } else {
-        // Fallback: No token means they need to re-verify PIN/Login
+
         emit(Locked(email));
       }
     });
 
     on<UserLoggedIn>((event, emit) async {
-      // Clear the lock status when user successfully enters PIN/Logs in
+
       await storage.setLockStatus(false);
       emit(Authenticated());
     });

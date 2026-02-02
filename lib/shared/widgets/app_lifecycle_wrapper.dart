@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/utils/storage_service.dart';
 import '../../features/auth/bloc/auth_bloc.dart';
 import '../../features/auth/bloc/auth_event.dart';
+import '../../features/auth/bloc/auth_state.dart';
 
 class AppLifecycleWrapper extends StatefulWidget {
   final Widget child;
@@ -13,18 +15,52 @@ class AppLifecycleWrapper extends StatefulWidget {
 }
 
 class _AppLifecycleWrapperState extends State<AppLifecycleWrapper> with WidgetsBindingObserver {
+  Timer? _inactivityTimer;
+
+
+  static const _inactivityDuration = Duration(minutes: 5);
+
   @override
   void initState() {
     super.initState();
-    // Start listening to app lifecycle changes
     WidgetsBinding.instance.addObserver(this);
+    _resetInactivityTimer();
   }
 
   @override
   void dispose() {
-    // Stop listening when the app is destroyed
+    _inactivityTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  void _resetInactivityTimer() {
+    _inactivityTimer?.cancel();
+
+
+    final authState = context.read<AuthBloc>().state;
+    if (authState is Authenticated) {
+      _inactivityTimer = Timer(_inactivityDuration, _lockAppDueToInactivity);
+    }
+  }
+
+
+  void _lockAppDueToInactivity() async {
+    final storage = context.read<StorageService>();
+    final authBloc = context.read<AuthBloc>();
+
+    if (authBloc.state is Authenticated) {
+      debugPrint("⏰ Timer expired! Locking...");
+
+
+      await storage.setLockStatus(true);
+
+
+      await Future.delayed(const Duration(milliseconds: 50));
+
+
+      authBloc.add(AppStarted());
+    }
   }
 
   @override
@@ -32,16 +68,34 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper> with WidgetsB
     final storage = context.read<StorageService>();
     final authBloc = context.read<AuthBloc>();
 
-    // When app moves to background or is swiped away
     if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+
+      _inactivityTimer?.cancel();
       await storage.setLockStatus(true);
-    }
-    // When app comes back to the front
-    else if (state == AppLifecycleState.resumed) {
+    } else if (state == AppLifecycleState.resumed) {
+      // User returned - restart timer and check lock status
+      _resetInactivityTimer();
       authBloc.add(AppStarted());
     }
   }
-
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) {
+    return BlocListener<AuthBloc, AuthState>(
+      // Start the timer specifically when the user reaches the Authenticated state
+      listener: (context, state) {
+        if (state is Authenticated) {
+          _resetInactivityTimer();
+        } else {
+          // Stop timer if locked or logged out
+          _inactivityTimer?.cancel();
+        }
+      },
+      child: Listener(
+        onPointerDown: (_) => _resetInactivityTimer(),
+        onPointerMove: (_) => _resetInactivityTimer(), // Catch scrolls too!
+        behavior: HitTestBehavior.translucent,
+        child: widget.child,
+      ),
+    );
+  }
 }

@@ -12,7 +12,7 @@ class PinIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Access the current theme
+
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -28,10 +28,8 @@ class PinIndicator extends StatelessWidget {
           height: 18,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            // Uses primaryTeal for filled, transparent for empty
             color: isFilled ? colorScheme.primary : Colors.transparent,
             border: Border.all(
-              // Uses primaryTeal for filled, outline color for empty
               color: isFilled ? colorScheme.primary : colorScheme.outlineVariant,
               width: 2,
             ),

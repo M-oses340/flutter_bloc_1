@@ -24,7 +24,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
     if (_pin.length < 4) {
       setState(() => _pin += value);
       if (_pin.length == 4) {
-        // PIN is same as password used in login function
+
         context.read<LoginBloc>().add(PinUnlocked(pin: _pin));
       }
     }
@@ -116,7 +116,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
 
                   if (isLoading)
                     Container(
-                      // UPDATED: Used withValues instead of withOpacity
+
                       color: theme.scaffoldBackgroundColor.withValues(alpha: 0.7),
                       child: const Center(
                         child: CircularProgressIndicator(),

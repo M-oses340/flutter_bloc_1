@@ -34,7 +34,6 @@ class PinKeypad extends StatelessWidget {
               width: 80,
               child: IconButton(
                 onPressed: onBackspace,
-                // Using primary color for the icon to match your teal theme
                 icon: Icon(Icons.backspace_outlined, size: 28, color: colorScheme.primary),
               ),
             ),
@@ -60,7 +59,9 @@ class PinKeypad extends StatelessWidget {
           color: theme.cardColor,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(theme.brightness == Brightness.light ? 0.05 : 0.2),
+              color: Colors.black.withValues(
+                alpha: theme.brightness == Brightness.light ? 0.05 : 0.2,
+              ),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
