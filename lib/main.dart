@@ -10,8 +10,10 @@ import 'features/auth/repositories/auth_repository.dart';
 import 'features/expenses/data/repositories/expense_repository.dart';
 import 'features/expenses/bloc/expense_bloc.dart';
 
-
+// Import Login features
+import 'features/login/bloc/login_bloc.dart';
 import 'features/login/presentation/screens/login_screen.dart';
+import 'features/login/presentation/screens/pin_lock_screen.dart'; // New Screen
 import 'features/shops/presentation/screens/home_screen.dart';
 
 void main() async {
@@ -39,7 +41,13 @@ class MyApp extends StatelessWidget {
             AuthBloc(storage: context.read<StorageService>())
               ..add(AppStarted()),
           ),
-
+          // Register LoginBloc so PinLockScreen can use it
+          BlocProvider(
+            create: (context) => LoginBloc(
+              repo: context.read<AuthRepository>(),
+              storage: context.read<StorageService>(),
+            ),
+          ),
           BlocProvider(
             create: (context) => ExpenseBloc(
               repository: context.read<ExpenseRepository>(),
@@ -54,16 +62,25 @@ class MyApp extends StatelessWidget {
           themeMode: ThemeMode.system,
           home: BlocBuilder<AuthBloc, AuthState>(
             builder: (context, state) {
+              // 1. Fully logged in and token is fresh
               if (state is Authenticated) {
                 return const HomeScreen();
               }
 
+              // 2. App has user info but session is locked (Show PIN UI)
+              if (state is Locked) {
+                return PinLockScreen(email: state.email);
+              }
+
+              // 3. App is still loading storage
               if (state is AuthInitial) {
                 return const Scaffold(
                   body: Center(child: CircularProgressIndicator()),
                 );
               }
-              return LoginScreen();
+
+              // 4. Default: Show Login (Unauthenticated)
+              return const LoginScreen();
             },
           ),
         ),

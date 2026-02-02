@@ -12,12 +12,26 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     on<LoginButtonPressed>((event, emit) async {
       emit(LoginLoading());
       try {
+
         final res = await repo.login(event.email, event.password);
+
         if (res.data != null) {
-          await storage.saveToken(res.data!.accessToken);
+
+          final access = res.data!.accessToken;
+          final refresh = res.data!.refreshToken;
+
+
+          await storage.saveTokens(
+            access: access,
+            refresh: refresh,
+          );
+
+
+          await storage.saveUserEmail(event.email);
+
           emit(LoginSuccess());
         } else {
-          emit(LoginFailure("No user data returned"));
+          emit(LoginFailure("Login failed: ${res.message}"));
         }
       } catch (e) {
         emit(LoginFailure(e.toString()));
