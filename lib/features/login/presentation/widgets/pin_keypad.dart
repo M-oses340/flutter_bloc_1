@@ -28,7 +28,7 @@ class PinKeypad extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            const SizedBox(width: 80), // Empty space for layout balance
+            const SizedBox(width: 80),
             _buildNumberButton(context, "0"),
             SizedBox(
               width: 80,
@@ -72,7 +72,7 @@ class PinKeypad extends StatelessWidget {
             text,
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface, // Automatically flips Black/White
+              color: colorScheme.onSurface,
             ),
           ),
         ),
