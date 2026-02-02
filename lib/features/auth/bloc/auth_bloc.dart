@@ -11,21 +11,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AppStarted>((event, emit) async {
       final email = await storage.getUserEmail();
       final token = await storage.getToken();
-      // NEW: Check the explicit lock flag instead of the timer
+
       final isLocked = await storage.isLocked();
 
-      // 1. If no email exists, user must log in from scratch
       if (email == null) {
         emit(Unauthenticated());
         return;
       }
 
-      // 2. If the app was marked as locked (on exit), force the PIN screen
       if (isLocked) {
         emit(Locked(email));
         return;
       }
-
 
       if (token != null) {
         emit(Authenticated());
@@ -34,7 +31,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         emit(Locked(email));
       }
     });
-
     on<UserLoggedIn>((event, emit) async {
 
       await storage.setLockStatus(false);
