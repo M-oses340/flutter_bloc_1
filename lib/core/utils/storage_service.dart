@@ -3,7 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class StorageService {
   final _storage = const FlutterSecureStorage();
 
-  // Keys
+
   static const _keyAccessToken = 'access_token';
   static const _keyRefreshToken = 'refresh_token';
   static const _keyUserEmail = 'user_email';
@@ -20,7 +20,7 @@ class StorageService {
     await _storage.write(key: _keyUserEmail, value: email);
   }
 
-  // NEW: Save the exact time the user leaves the app
+
   Future<void> saveLastActiveTime() async {
     final now = DateTime.now().millisecondsSinceEpoch.toString();
     await _storage.write(key: _keyLastActive, value: now);
