@@ -34,7 +34,7 @@ class PinKeypad extends StatelessWidget {
               width: 80,
               child: IconButton(
                 onPressed: onBackspace,
-                icon: Icon(Icons.backspace_outlined, size: 28, color: colorScheme.primary),
+                icon: Icon(Icons.backspace_outlined, size: 28, color: colorScheme.onSurface.withValues(alpha: 0.7)),
               ),
             ),
           ],
