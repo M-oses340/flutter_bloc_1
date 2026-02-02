@@ -50,15 +50,8 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper> with WidgetsB
     final authBloc = context.read<AuthBloc>();
 
     if (authBloc.state is Authenticated) {
-      debugPrint("⏰ Timer expired! Locking...");
-
-
       await storage.setLockStatus(true);
-
-
       await Future.delayed(const Duration(milliseconds: 50));
-
-
       authBloc.add(AppStarted());
     }
   }
@@ -73,7 +66,7 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper> with WidgetsB
       _inactivityTimer?.cancel();
       await storage.setLockStatus(true);
     } else if (state == AppLifecycleState.resumed) {
-      // User returned - restart timer and check lock status
+
       _resetInactivityTimer();
       authBloc.add(AppStarted());
     }
@@ -81,18 +74,18 @@ class _AppLifecycleWrapperState extends State<AppLifecycleWrapper> with WidgetsB
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
-      // Start the timer specifically when the user reaches the Authenticated state
+
       listener: (context, state) {
         if (state is Authenticated) {
           _resetInactivityTimer();
         } else {
-          // Stop timer if locked or logged out
+
           _inactivityTimer?.cancel();
         }
       },
       child: Listener(
         onPointerDown: (_) => _resetInactivityTimer(),
-        onPointerMove: (_) => _resetInactivityTimer(), // Catch scrolls too!
+        onPointerMove: (_) => _resetInactivityTimer(),
         behavior: HitTestBehavior.translucent,
         child: widget.child,
       ),
