@@ -5,6 +5,11 @@ import '../../../products/presentation/screens/product_list_screen.dart';
 import '../../../expenses/presentation/screens/expense_list_screen.dart';
 import '../../../expenses/bloc/expense_bloc.dart';
 import '../../../expenses/bloc/expense_event.dart';
+import '../../../store/bloc/store_bloc.dart';
+import '../../../store/bloc/store_event.dart';
+import '../../../store/data/repositories/store_repository.dart';
+import '../../../store/presentation/screens/store_screen.dart';
+
 
 class DashboardActionGrid extends StatelessWidget {
   final int shopId;
@@ -68,11 +73,29 @@ class DashboardActionGrid extends StatelessWidget {
           );
         },
       ),
+      _ActionItem(
+        Icons.storefront,
+        "Store",
+        Colors.pinkAccent,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => BlocProvider(
+                create: (context) => StoreBloc(
+                  repository: StoreRepository(),
+                )..add(LoadStoreStocks()), // Automatically load on entry
+                child: const StoreScreen(),
+              ),
+            ),
+          );
+        },
+      ),
+
       _ActionItem(Icons.shopping_cart_checkout, "Make Sale", Colors.green),
       _ActionItem(Icons.credit_card, "Credit Sale", Colors.orange),
       _ActionItem(Icons.list_alt_rounded, "All Sales", Colors.indigo),
       _ActionItem(Icons.people_alt_outlined, "Customers", Colors.blue),
-      _ActionItem(Icons.storefront, "Store", Colors.pinkAccent),
       _ActionItem(Icons.bar_chart_rounded, "Reports", Colors.deepPurple),
     ];
   }

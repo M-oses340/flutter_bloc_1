@@ -12,12 +12,12 @@ class ShopDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Accessing theme and colorScheme for dynamic styling
+
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      // ✅ Removed Color(0xFFF8F9FA) - now uses AppTheme background
+
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: _buildAppBar(context),
       body: CustomScrollView(
@@ -77,8 +77,7 @@ class ShopDashboardScreen extends StatelessWidget {
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      // ✅ Removed IconThemeData(color: Colors.black)
-      // AppBar icons will now follow theme's onSurface color
+
       iconTheme: theme.appBarTheme.iconTheme,
       title: Text(
         "Home",
