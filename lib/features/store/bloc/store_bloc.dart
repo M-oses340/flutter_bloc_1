@@ -32,12 +32,39 @@ class StoreBloc extends Bloc<StoreEvent, StoreState> {
       }
     });
 
+    on<TransferStockEvent>((event, emit) async {
+
+      try {
+        emit(StoreLoading());
+
+
+        bool exists = await repository.checkProductExists(event.stock.product);
+
+        if (!exists) {
+          debugPrint("Restoring product template for: ${event.stock.productName}");
+          await repository.restoreProduct(event.stock);
+        }
+
+
+        await repository.transferStockToMain(event.stock.id, event.quantity);
+
+
+        emit(StoreTransferSuccess(message: "Transferred ${event.quantity} units to main stock."));
+
+
+        _allStocks = await repository.fetchStoreStocks();
+        _applyFilters(emit);
+
+      } catch (e) {
+
+        emit(StoreError(e.toString()));
+      }
+    });
+
     on<AddStoreStockEvent>((event, emit) async {
       try {
         Map<String, dynamic> stockData = Map.from(event.stockData);
-        final shopId = stockData['shop']; // The shop remains constant (ID: 1)
-
-        // Check if the product is a name (String) because the catalog is currently empty
+        final shopId = stockData['shop'];
         if (stockData['product'] is String) {
           final String productName = stockData['product'].toString().trim();
 
@@ -51,18 +78,17 @@ class StoreBloc extends Bloc<StoreEvent, StoreState> {
             "selling_price": stockData['selling_price'],
           };
 
-          debugPrint("📦 Step 1: Registering '$productName' to Shop $shopId catalog...");
+
           final newProduct = await repository.createProduct(productPayload);
 
-          // Step 2: Swap the name for the new ID provided by the backend
+
           stockData['product'] = newProduct['id'];
         }
 
-        // Step 3: Add to Store Inventory (where quantity and specific stock data live)
-        debugPrint("🚀 Step 2: Adding to Shop $shopId inventory...");
+
         await repository.restockProduct(stockData);
 
-        // Step 4: Refresh the list to show the new product
+
         add(LoadStoreStocks());
 
       } catch (e) {

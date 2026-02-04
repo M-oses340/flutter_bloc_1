@@ -1,3 +1,5 @@
+import '../data/models/store_stock.dart';
+
 abstract class StoreEvent {}
 
 class LoadStoreStocks extends StoreEvent {}
@@ -14,8 +16,19 @@ class FilterStoreStocks extends StoreEvent {
   FilterStoreStocks(this.filter);
 }
 
-// ✅ Add this event for the "Add Product to Store" functionality
+
 class AddStoreStockEvent extends StoreEvent {
   final Map<String, dynamic> stockData;
   AddStoreStockEvent(this.stockData);
+}
+
+
+class TransferStockEvent extends StoreEvent {
+  final StoreStock stock;
+  final double quantity;
+
+  TransferStockEvent({
+    required this.stock,
+    required this.quantity,
+  });
 }
