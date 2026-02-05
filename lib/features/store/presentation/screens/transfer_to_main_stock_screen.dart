@@ -15,15 +15,18 @@ class TransferToMainStockScreen extends StatefulWidget {
 }
 
 class _TransferToMainStockScreenState extends State<TransferToMainStockScreen> {
-  final TextEditingController _quantityController = TextEditingController(text: "0.00");
-  double _transferQuantity = 0.0;
+  // ✅ 1. Initialized with whole number string
+  final TextEditingController _quantityController = TextEditingController(text: "0");
+  // ✅ 2. Changed type to int
+  int _transferQuantity = 0;
 
   @override
   void initState() {
     super.initState();
     _quantityController.addListener(() {
       setState(() {
-        _transferQuantity = double.tryParse(_quantityController.text) ?? 0.0;
+        // ✅ 3. Use int.tryParse for whole numbers
+        _transferQuantity = int.tryParse(_quantityController.text) ?? 0;
       });
     });
   }
@@ -46,10 +49,8 @@ class _TransferToMainStockScreenState extends State<TransferToMainStockScreen> {
         }
 
         if (state is StoreTransferSuccess) {
-          // Pop the loading dialog
-          Navigator.of(context).pop();
-          // Pop the transfer screen
-          Navigator.pop(context);
+          Navigator.of(context).pop(); // Pop loading
+          Navigator.pop(context); // Pop screen
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -62,7 +63,6 @@ class _TransferToMainStockScreenState extends State<TransferToMainStockScreen> {
         }
 
         if (state is StoreError) {
-          // Close loading dialog if open
           if (Navigator.canPop(context)) Navigator.pop(context);
 
           ScaffoldMessenger.of(context).showSnackBar(
@@ -101,30 +101,20 @@ class _TransferToMainStockScreenState extends State<TransferToMainStockScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Column(
                 children: [
-                  // 📦 Product Identity Card
                   _buildShadowWrapper(
                     child: TransferProductHeader(stock: widget.stock),
                   ),
-
                   const SizedBox(height: 20),
-
-                  // 🔢 Quantity Input Card
                   _buildInputCard(theme),
-
                   const SizedBox(height: 20),
-
-                  // 📊 Calculation Summary Card
                   _buildShadowWrapper(
                     child: TransferSummaryCard(
-                      quantity: _transferQuantity,
+                      quantity: _transferQuantity.toDouble(), // Convert to double only for the widget if it expects it
                       remaining: widget.stock.remainingQuantity - _transferQuantity,
                       totalValue: _transferQuantity * widget.stock.buyingPrice,
                     ),
                   ),
-
                   const SizedBox(height: 40),
-
-                  // 🔘 Action Button
                   _buildConfirmButton(colorScheme),
                 ],
               ),
@@ -134,8 +124,6 @@ class _TransferToMainStockScreenState extends State<TransferToMainStockScreen> {
       ),
     );
   }
-
-  // --- UI Components ---
 
   Widget _buildShadowWrapper({required Widget child}) {
     return Container(
@@ -176,14 +164,15 @@ class _TransferToMainStockScreenState extends State<TransferToMainStockScreen> {
           const SizedBox(height: 16),
           TextField(
             controller: _quantityController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            // 🛑 REMOVED decimal: true to enforce whole numbers on the keyboard
+            keyboardType: TextInputType.number,
             textAlign: TextAlign.center,
             style: theme.textTheme.displaySmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: colorScheme.onSurface,
             ),
             decoration: InputDecoration(
-              hintText: "0.00",
+              hintText: "0", // 🛑 UPDATED from 0.00
               suffixText: "Units",
               suffixStyle: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.hintColor,
@@ -230,10 +219,9 @@ class _TransferToMainStockScreenState extends State<TransferToMainStockScreen> {
             return;
           }
 
-          // Triggering the migration via the Bloc
           context.read<StoreBloc>().add(TransferStockEvent(
             stock: widget.stock,
-            quantity: _transferQuantity,
+            quantity: _transferQuantity.toDouble(), // Convert to double for Bloc if your model uses double
           ));
         },
         child: const Text(
