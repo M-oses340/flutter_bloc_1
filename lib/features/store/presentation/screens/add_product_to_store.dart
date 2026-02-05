@@ -21,7 +21,6 @@ class _AddProductToStoreScreenState extends State<AddProductToStoreScreen> {
   final TextEditingController _sellingPriceController = TextEditingController(text: "0");
   final TextEditingController _quantityController = TextEditingController(text: "0");
 
-  // ✅ FIX: Changed from int? to dynamic to support String (new name) and int (existing ID)
   dynamic _selectedProductData;
 
   @override
@@ -33,12 +32,10 @@ class _AddProductToStoreScreenState extends State<AddProductToStoreScreen> {
   }
 
   Future<void> _handleRestock() async {
-    // ✅ Ensure you use 'final' or 'int?' here to define the variable locally
     final int? shopId = await _storage.getShopId();
 
-    // Now this debugPrint will work because shopId is defined in this scope
-    debugPrint("--- Storage Check ---");
-    debugPrint("Retrieved Shop ID: $shopId");
+    // ✅ FIX: "Don't use 'BuildContext's across async gaps"
+    if (!mounted) return;
 
     if (_formKey.currentState!.validate() && _selectedProductData != null) {
       if (shopId == null) {
@@ -49,12 +46,12 @@ class _AddProductToStoreScreenState extends State<AddProductToStoreScreen> {
       }
 
       final stockData = {
-        "product": _selectedProductData, // "mouse" (String) or ID (int)
+        "product": _selectedProductData,
         "shop": shopId,
         "quantity": double.tryParse(_quantityController.text) ?? 0.0,
         "buying_price": double.tryParse(_buyingPriceController.text) ?? 0.0,
         "selling_price": double.tryParse(_sellingPriceController.text) ?? 0.0,
-        "expiry_date": "2026-02-02",
+        "expiry_date": "2026-02-05",
       };
 
       context.read<StoreBloc>().add(AddStoreStockEvent(stockData));
@@ -75,116 +72,190 @@ class _AddProductToStoreScreenState extends State<AddProductToStoreScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final tealColor = theme.colorScheme.primary;
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text(
-            "Add Product To Store",
-            style: TextStyle(fontWeight: FontWeight.bold)
-        ),
-        iconTheme: IconThemeData(color: tealColor),
+        title: const Text("Stock Entry", style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const StoreFormSectionTitle(title: "Product Selection *"),
-
-              // ✅ FIX: Using BlocBuilder to get actual products for the selector
-              BlocBuilder<StoreBloc, StoreState>(
-                builder: (context, state) {
-                  // Assuming your StoreState has a 'products' list
-                  final productList = (state is StoreLoaded) ? state.stocks.map((s) => s.product).toList() : [];
-
-                  return StoreProductSelector(
-                    selectedValue: _selectedProductData,
-                    products: productList,
-                    onChanged: (val) {
-                      setState(() {
-                        _selectedProductData = val; // Accepts int or String
-                      });
-                    },
-                  );
-                },
-              ),
-
-              const SizedBox(height: 24),
-              const StoreFormSectionTitle(title: "Pricing Details"),
-              Row(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              colorScheme.surface,
+              colorScheme.primaryContainer.withValues(alpha: 0.15),
+              colorScheme.surface,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Form(
+              key: _formKey,
+              child: Column(
                 children: [
-                  Expanded(
-                    child: StoreInputField(
-                      label: "Buying Price",
-                      controller: _buyingPriceController,
+                  _buildFormCard(
+                    theme,
+                    title: "Product Selection",
+                    icon: Icons.inventory_2_outlined,
+                    child: BlocBuilder<StoreBloc, StoreState>(
+                      builder: (context, state) {
+                        final productList = (state is StoreLoaded)
+                            ? state.stocks.map((s) => s.product).toList()
+                            : [];
+                        return StoreProductSelector(
+                          selectedValue: _selectedProductData,
+                          products: productList,
+                          onChanged: (val) => setState(() => _selectedProductData = val),
+                        );
+                      },
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: StoreInputField(
-                      label: "Selling Price",
-                      controller: _sellingPriceController,
+                  const SizedBox(height: 16),
+                  _buildFormCard(
+                    theme,
+                    title: "Pricing & Inventory",
+                    icon: Icons.analytics_outlined,
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: StoreInputField(
+                                label: "Buying Price",
+                                controller: _buyingPriceController,
+                                prefixText: "KSh ", // ✅ Now defined
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: StoreInputField(
+                                label: "Selling Price",
+                                controller: _sellingPriceController,
+                                prefixText: "KSh ", // ✅ Now defined
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        StoreInputField(
+                          label: "Initial Quantity",
+                          controller: _quantityController,
+                          suffixText: "Units", // ✅ Now defined
+                        ),
+                      ],
                     ),
                   ),
+                  const SizedBox(height: 40),
+                  _buildActionButtons(colorScheme),
                 ],
               ),
-
-              const SizedBox(height: 24),
-              const StoreFormSectionTitle(title: "Inventory"),
-              StoreInputField(
-                label: "Initial Quantity",
-                controller: _quantityController,
-              ),
-
-              const SizedBox(height: 40),
-              _buildActionButtons(theme, tealColor),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildActionButtons(ThemeData theme, Color tealColor) {
+  Widget _buildFormCard(ThemeData theme, {required String title, required IconData icon, required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 20, color: theme.colorScheme.primary),
+              const SizedBox(width: 8),
+              Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const Divider(height: 24, thickness: 0.5),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(ColorScheme colorScheme) {
     return Column(
       children: [
         SizedBox(
           width: double.infinity,
-          height: 55,
+          height: 60,
           child: ElevatedButton.icon(
             onPressed: _handleRestock,
-            icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-            label: const Text(
-                "CONFIRM & ADD",
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.1)
-            ),
+            icon: const Icon(Icons.check_circle_outline),
+            label: const Text("CONFIRM STOCK ENTRY", style: TextStyle(fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: tealColor,
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              shape: const StadiumBorder(),
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          height: 55,
-          child: OutlinedButton(
-            onPressed: _resetForm,
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: tealColor.withOpacity(0.3)),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: Text(
-                "Clear Form",
-                style: TextStyle(color: tealColor, fontWeight: FontWeight.w500)
-            ),
-          ),
+        TextButton(
+          onPressed: _resetForm,
+          child: Text("Clear Form", style: TextStyle(color: colorScheme.outline)),
         ),
       ],
+    );
+  }
+}
+
+// ✅ Updated helper widget to handle the missing parameters
+class StoreInputField extends StatelessWidget {
+  final String label;
+  final TextEditingController controller;
+  final String? prefixText;
+  final String? suffixText;
+
+  const StoreInputField({
+    super.key,
+    required this.label,
+    required this.controller,
+    this.prefixText,
+    this.suffixText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return TextField(
+      controller: controller,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixText: prefixText,
+        suffixText: suffixText,
+        filled: true,
+        fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+      ),
     );
   }
 }
