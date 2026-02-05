@@ -83,7 +83,14 @@ class TransferSummaryCard extends StatelessWidget {
       child: Column(
         children: [
           _summaryRow(theme, "Transferring", "${quantity.toStringAsFixed(2)} units"),
-          _summaryRow(theme, "Remaining", "${remaining.toStringAsFixed(2)} units"),
+          // Inside TransferSummaryCard build method:
+          _summaryRow(
+            theme,
+            "Remaining",
+            "${remaining.toStringAsFixed(2)} units",
+            // 💡 Highlight red if stock hits zero or becomes negative
+            valueColor: remaining <= 0 ? theme.colorScheme.error : null,
+          ),
           const Divider(height: 30),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -103,14 +110,17 @@ class TransferSummaryCard extends StatelessWidget {
     );
   }
 
-  Widget _summaryRow(ThemeData theme, String label, String value) {
+  Widget _summaryRow(ThemeData theme, String label, String value, {Color? valueColor}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor)),
-          Text(value, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+          Text(value, style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: valueColor ?? theme.textTheme.bodyMedium?.color, // Use custom color if provided
+          )),
         ],
       ),
     );
