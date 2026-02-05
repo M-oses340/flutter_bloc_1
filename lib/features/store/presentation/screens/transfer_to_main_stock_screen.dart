@@ -141,17 +141,22 @@ class _TransferToMainStockScreenState extends State<TransferToMainStockScreen> {
           elevation: 0,
         ),
         onPressed: () {
-
+          // 🛡️ Logic Validations
           if (_transferQuantity <= 0) {
-
-          }
-
-          if (_transferQuantity > widget.stock.remainingQuantity) {
-
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Please enter a valid quantity")),
+            );
             return;
           }
 
-          // Triggering the Bloc
+          if (_transferQuantity > widget.stock.remainingQuantity) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Insufficient stock available")),
+            );
+            return;
+          }
+
+          // 🚀 Triggering the Bloc with the same PIN/Auth context
           context.read<StoreBloc>().add(TransferStockEvent(
             stock: widget.stock,
             quantity: _transferQuantity,
