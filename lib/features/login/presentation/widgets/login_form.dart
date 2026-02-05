@@ -22,6 +22,13 @@ class _LoginFormState extends State<LoginForm> {
     super.dispose();
   }
 
+  // Helper to trigger login
+  void _handleLogin() {
+    if (_email.text.isNotEmpty && _pass.text.isNotEmpty) {
+      widget.onLogin(_email.text.trim(), _pass.text);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -35,6 +42,8 @@ class _LoginFormState extends State<LoginForm> {
           label: "Email",
           icon: Icons.email_outlined,
           enabled: !widget.isLoading,
+          keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.next,
         ),
         const SizedBox(height: 20),
         _buildTextField(
@@ -44,6 +53,10 @@ class _LoginFormState extends State<LoginForm> {
           icon: Icons.lock_outline,
           isPassword: true,
           enabled: !widget.isLoading,
+          // Since it's a Pin, number keyboard is often better
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _handleLogin(),
         ),
         const SizedBox(height: 30),
         SizedBox(
@@ -55,11 +68,10 @@ class _LoginFormState extends State<LoginForm> {
             style: ElevatedButton.styleFrom(
               elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              //
               backgroundColor: colorScheme.primary,
               foregroundColor: colorScheme.onPrimary,
             ),
-            onPressed: () => widget.onLogin(_email.text.trim(), _pass.text),
+            onPressed: _handleLogin,
             child: const Text(
                 "LOGIN",
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.1)
@@ -77,6 +89,9 @@ class _LoginFormState extends State<LoginForm> {
     required IconData icon,
     bool isPassword = false,
     bool enabled = true,
+    TextInputType? keyboardType,
+    TextInputAction? textInputAction,
+    Function(String)? onSubmitted,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -84,6 +99,9 @@ class _LoginFormState extends State<LoginForm> {
       controller: controller,
       enabled: enabled,
       obscureText: isPassword ? _obscureText : false,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      onSubmitted: onSubmitted,
       style: TextStyle(color: colorScheme.onSurface),
       decoration: InputDecoration(
         labelText: label,
@@ -99,7 +117,6 @@ class _LoginFormState extends State<LoginForm> {
         )
             : null,
         filled: true,
-        //
         fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
