@@ -3,8 +3,15 @@ import 'package:flutter/material.dart';
 class LoginForm extends StatefulWidget {
   final bool isLoading;
   final Function(String email, String password) onLogin;
+  // ✅ Added this to share the PIN state with the LoginScreen
+  final TextEditingController pinController;
 
-  const LoginForm({super.key, required this.isLoading, required this.onLogin});
+  const LoginForm({
+    super.key,
+    required this.isLoading,
+    required this.onLogin,
+    required this.pinController,
+  });
 
   @override
   State<LoginForm> createState() => _LoginFormState();
@@ -12,21 +19,30 @@ class LoginForm extends StatefulWidget {
 
 class _LoginFormState extends State<LoginForm> {
   final _email = TextEditingController();
-  final _pass = TextEditingController();
+  // 🗑️ _pass controller removed because we use widget.pinController now
   bool _obscureText = true;
 
   @override
   void dispose() {
     _email.dispose();
-    _pass.dispose();
+    // 💡 Note: We do NOT dispose widget.pinController here because
+    // it belongs to the LoginScreen.
     super.dispose();
   }
 
-  // Helper to trigger login
   void _handleLogin() {
-    if (_email.text.isNotEmpty && _pass.text.isNotEmpty) {
-      widget.onLogin(_email.text.trim(), _pass.text);
+    final emailValue = _email.text.trim();
+    final pinValue = widget.pinController.text.trim();
+
+    if (emailValue.isEmpty || pinValue.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter both email and PIN")),
+      );
+      return;
     }
+
+    // Pass data up to the LoginScreen's Bloc call
+    widget.onLogin(emailValue, pinValue);
   }
 
   @override
@@ -48,33 +64,36 @@ class _LoginFormState extends State<LoginForm> {
         const SizedBox(height: 20),
         _buildTextField(
           context: context,
-          controller: _pass,
-          label: "Pin",
+          controller: widget.pinController, // ✅ Now using the shared controller
+          label: "Security PIN",
           icon: Icons.lock_outline,
           isPassword: true,
           enabled: !widget.isLoading,
-          // Since it's a Pin, number keyboard is often better
-          keyboardType: TextInputType.number,
+          keyboardType: const TextInputType.numberWithOptions(decimal: false),
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => _handleLogin(),
         ),
         const SizedBox(height: 30),
         SizedBox(
           width: double.infinity,
-          height: 55,
+          height: 60,
           child: widget.isLoading
               ? Center(child: CircularProgressIndicator(color: colorScheme.primary))
               : ElevatedButton(
             style: ElevatedButton.styleFrom(
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: const StadiumBorder(),
               backgroundColor: colorScheme.primary,
               foregroundColor: colorScheme.onPrimary,
             ),
             onPressed: _handleLogin,
             child: const Text(
-                "LOGIN",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.1)
+              "LOGIN",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                letterSpacing: 1.2,
+              ),
             ),
           ),
         ),
@@ -102,9 +121,14 @@ class _LoginFormState extends State<LoginForm> {
       keyboardType: keyboardType,
       textInputAction: textInputAction,
       onSubmitted: onSubmitted,
-      style: TextStyle(color: colorScheme.onSurface),
+      maxLength: isPassword ? 4 : null,
+      style: TextStyle(
+        color: colorScheme.onSurface,
+        fontWeight: isPassword ? FontWeight.bold : FontWeight.normal,
+      ),
       decoration: InputDecoration(
         labelText: label,
+        counterText: "",
         labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
         prefixIcon: Icon(icon, color: colorScheme.primary),
         suffixIcon: isPassword
@@ -119,16 +143,8 @@ class _LoginFormState extends State<LoginForm> {
         filled: true,
         fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.outlineVariant),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
         ),
       ),
     );

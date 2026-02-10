@@ -24,13 +24,15 @@ class UserData {
   });
 
   factory UserData.fromJson(Map<String, dynamic> json) {
-    // Navigate carefully: data -> tokens -> access
+    print("DEBUG RAW JSON: $json");
+    // Attempt to find tokens in a sub-map, but fall back to the main map if missing
     final tokens = json["tokens"] as Map<String, dynamic>?;
 
     return UserData(
       user: User.fromJson(json["user"]),
-      accessToken: tokens?["access"] ?? "",
-      refreshToken: tokens?["refresh"] ?? "",
+      // If tokens?["access"] is null, it checks json["access"]
+      accessToken: tokens?["access"] ?? json["access"] ?? "",
+      refreshToken: tokens?["refresh"] ?? json["refresh"] ?? "",
     );
   }
 }

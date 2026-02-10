@@ -1,36 +1,25 @@
-import 'package:equatable/equatable.dart';
+// lib/features/login/bloc/login_state.dart
 
-abstract class LoginState extends Equatable {
-  const LoginState(); // Add const here
-
-  @override
-  List<Object?> get props => [];
+abstract class LoginState {
+  const LoginState();
 }
 
-class LoginInitial extends LoginState {
-  const LoginInitial();
-}
+/// The initial state before any action is taken
+class LoginInitial extends LoginState {}
 
-class LoginLoading extends LoginState {
-  const LoginLoading();
-}
+/// State emitted while the API request is in progress
+class LoginLoading extends LoginState {}
 
 class LoginSuccess extends LoginState {
-  const LoginSuccess();
+  final String token;
+  final String passwordUsed; // ✅ Add this field
+
+  LoginSuccess({required this.token, required this.passwordUsed});
 }
 
+/// State emitted when an error occurs
 class LoginFailure extends LoginState {
   final String error;
-  const LoginFailure(this.error); // Add const here
 
-  @override
-  List<Object?> get props => [error];
-}
-
-class Locked extends LoginState {
-  final String email;
-  const Locked(this.email); // This now works because parent is const
-
-  @override
-  List<Object?> get props => [email];
+  const LoginFailure(this.error);
 }
