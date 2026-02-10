@@ -23,6 +23,10 @@ import 'features/expenses/data/repositories/expense_repository.dart';
 import 'features/expenses/bloc/expense_bloc.dart';
 import 'features/shops/presentation/screens/home_screen.dart';
 
+// Customer Feature (NEW)
+import 'features/customers/data/repositories/customer_repository.dart';
+import 'features/customers/bloc/customer_bloc.dart';
+
 void main() async {
   // Ensure Flutter engine is ready before calling native code/plugins
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +47,7 @@ class MyApp extends StatelessWidget {
         RepositoryProvider(create: (_) => AuthRepository()),
         RepositoryProvider(create: (_) => StorageService()),
         RepositoryProvider(create: (_) => ExpenseRepository()),
+        RepositoryProvider(create: (_) => CustomerRepository()), // Added Customer Repo
       ],
       child: MultiBlocProvider(
         providers: [
@@ -67,9 +72,15 @@ class MyApp extends StatelessWidget {
               repository: context.read<ExpenseRepository>(),
             ),
           ),
+
+          // 4. CustomerBloc handles all customer-related logic
+          BlocProvider(
+            create: (context) => CustomerBloc(
+              repository: context.read<CustomerRepository>(),
+            ),
+          ),
         ],
         child: AppLifecycleWrapper(
-          // This wrapper listens for app backgrounding to lock the UI
           child: MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'Shop App',
@@ -77,15 +88,8 @@ class MyApp extends StatelessWidget {
             darkTheme: AppTheme.darkTheme,
             themeMode: ThemeMode.system,
 
-            // The Top-Level Router
             home: BlocBuilder<AuthBloc, AuthState>(
               builder: (context, state) {
-                // Logic Flow:
-                // Authenticated -> Token is valid, app is unlocked.
-                // Locked -> User email exists but PIN verification required.
-                // AuthInitial -> First boot, reading from secure storage.
-                // Default -> No user found, show login.
-
                 if (state is Authenticated) {
                   return const HomeScreen();
                 }
