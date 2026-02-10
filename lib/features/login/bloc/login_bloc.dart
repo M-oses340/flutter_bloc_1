@@ -15,18 +15,21 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       emit(LoginLoading());
       try {
         final res = await repo.login(event.email, event.password);
-
         final token = res.data?.accessToken ?? "";
 
         if (token.isNotEmpty) {
           debugPrint('🚀 [LoginBloc] SUCCESS! Token found: ${token.substring(0, 5)}...');
+
+          // ✅ 1. Save the password (PIN) so the CustomerCard can verify it later
+          await storage.saveUserPin(event.password);
+          // ✅ Also save email for the next local unlock
+          await storage.saveUserEmail(event.email);
 
           emit(LoginSuccess(
             passwordUsed: event.password,
             token: token,
           ));
         } else {
-          debugPrint('⚠️ [LoginBloc] ERROR: Token was empty in response!');
           emit(LoginFailure("Login succeeded, but the server didn't send a token."));
         }
       } catch (e) {
@@ -48,7 +51,9 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         final res = await repo.unlockWithPin(email, event.pin);
 
         if (res.data != null) {
-          // 1. Update storage with fresh tokens
+          // ✅ 2. Refresh the saved PIN in storage
+          await storage.saveUserPin(event.pin);
+
           await storage.saveTokens(
             access: res.data!.accessToken,
             refresh: res.data!.refreshToken,
@@ -59,7 +64,6 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
             await storage.saveShopId(firstShopId);
           }
 
-          // 2. Emit success with the PIN used and the new token
           emit(LoginSuccess(
             passwordUsed: event.pin,
             token: res.data!.accessToken,
