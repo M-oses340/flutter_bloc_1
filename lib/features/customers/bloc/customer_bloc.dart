@@ -13,11 +13,9 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
     on<FetchCustomers>((event, emit) async {
       emit(CustomerLoading());
       try {
-        // ✅ Updated to match fetchCustomers in your new repository
         final customers = await repository.fetchCustomers(event.shopId);
         emit(CustomerLoaded(customers));
       } catch (e) {
-        // Strip "Exception: " prefix for a cleaner UI message
         final errorMsg = e.toString().replaceAll('Exception: ', '');
         emit(CustomerError(errorMsg));
       }
@@ -28,29 +26,42 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
       final currentState = state;
 
       try {
-        // ✅ Updated to use the Map-based addCustomer method
         final newCustomer = await repository.addCustomer({
           "name": event.name,
           "phone_number": event.phoneNumber,
           "shop": event.shopId,
         });
 
+
         if (currentState is CustomerLoaded) {
-          // Update the list locally for an instant UI response
           final updatedList = List<Customer>.from(currentState.customers)..insert(0, newCustomer);
           emit(CustomerLoaded(updatedList));
         } else {
-          // If state wasn't loaded, trigger a fresh fetch
           add(FetchCustomers(event.shopId));
         }
       } catch (e) {
         final errorMsg = e.toString().replaceAll('Exception: ', '');
         emit(CustomerError("Failed to add customer: $errorMsg"));
+        if (currentState is CustomerLoaded) emit(CustomerLoaded(currentState.customers));
+      }
+    });
 
-        // Optional: If adding fails, revert to the previous loaded list if it existed
+    // 🗑️ Handle Deletion
+    on<DeleteCustomerEvent>((event, emit) async {
+      final currentState = state;
+      try {
+        await repository.deleteCustomer(event.customerId);
+
         if (currentState is CustomerLoaded) {
-          emit(CustomerLoaded(currentState.customers));
+          final updatedList = currentState.customers
+              .where((c) => c.id != event.customerId)
+              .toList();
+          emit(CustomerLoaded(updatedList));
         }
+      } catch (e) {
+        final errorMsg = e.toString().replaceAll('Exception: ', '');
+        emit(CustomerError("Could not delete: $errorMsg"));
+        if (currentState is CustomerLoaded) emit(CustomerLoaded(currentState.customers));
       }
     });
   }

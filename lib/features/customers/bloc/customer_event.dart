@@ -30,11 +30,20 @@ class AddCustomerEvent extends CustomerEvent {
   List<Object> get props => [name, phoneNumber, shopId];
 }
 
-/// Event to search or filter customers locally (Optional but useful)
+
 class SearchCustomers extends CustomerEvent {
   final String query;
 
   const SearchCustomers(this.query);
 
   List<Object> get props => [query];
+}
+
+class DeleteCustomerEvent extends CustomerEvent {
+  final int customerId;
+  final int shopId; // Needed to refresh or find context
+
+  const DeleteCustomerEvent({required this.customerId, required this.shopId});
+
+  List<Object> get props => [customerId, shopId];
 }
