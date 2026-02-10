@@ -9,38 +9,48 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
 
   CustomerBloc({required this.repository}) : super(CustomerInitial()) {
 
-    // Handle Fetching
+    // 🔍 Handle Fetching
     on<FetchCustomers>((event, emit) async {
       emit(CustomerLoading());
       try {
-        final customers = await repository.getCustomers(event.shopId);
+        // ✅ Updated to match fetchCustomers in your new repository
+        final customers = await repository.fetchCustomers(event.shopId);
         emit(CustomerLoaded(customers));
       } catch (e) {
-        emit(CustomerError(e.toString()));
+        // Strip "Exception: " prefix for a cleaner UI message
+        final errorMsg = e.toString().replaceAll('Exception: ', '');
+        emit(CustomerError(errorMsg));
       }
     });
 
-    // Handle Adding
+    // ➕ Handle Adding
     on<AddCustomerEvent>((event, emit) async {
-      // We keep the current list in memory if we are already in Loaded state
       final currentState = state;
+
       try {
-        final newCustomer = await repository.createCustomer(
-          name: event.name,
-          phoneNumber: event.phoneNumber,
-          shopId: event.shopId,
-        );
+        // ✅ Updated to use the Map-based addCustomer method
+        final newCustomer = await repository.addCustomer({
+          "name": event.name,
+          "phone_number": event.phoneNumber,
+          "shop": event.shopId,
+        });
 
         if (currentState is CustomerLoaded) {
-          // Add the new customer to the existing list immediately for smooth UI
-          final updatedList = List<Customer>.from(currentState.customers)..add(newCustomer);
+          // Update the list locally for an instant UI response
+          final updatedList = List<Customer>.from(currentState.customers)..insert(0, newCustomer);
           emit(CustomerLoaded(updatedList));
         } else {
-          // If list wasn't loaded, just fetch fresh
+          // If state wasn't loaded, trigger a fresh fetch
           add(FetchCustomers(event.shopId));
         }
       } catch (e) {
-        emit(CustomerError("Failed to add customer: $e"));
+        final errorMsg = e.toString().replaceAll('Exception: ', '');
+        emit(CustomerError("Failed to add customer: $errorMsg"));
+
+        // Optional: If adding fails, revert to the previous loaded list if it existed
+        if (currentState is CustomerLoaded) {
+          emit(CustomerLoaded(currentState.customers));
+        }
       }
     });
   }

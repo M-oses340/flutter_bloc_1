@@ -1,84 +1,109 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/utils/storage_service.dart';
 import '../models/customer_model.dart';
 
 class CustomerRepository {
-  final String baseUrl = "http://13.51.196.227/customers/";
   final StorageService _storage = StorageService();
 
-  // GET: Fetch Customers
-  Future<List<Customer>> getCustomers(int shopId) async {
-    final token = await _storage.getToken();
-    final response = await http.get(
-      Uri.parse('$baseUrl?shop_id=$shopId'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
+  // Helper to ensure the URL doesn't have a trailing slash conflict
+  String get _cleanBaseUrl {
+    String url = ApiConstants.baseUrl;
+    return url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+  }
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> decodedData = jsonDecode(response.body);
-      if (decodedData['error'] == false) {
-        final List<dynamic> customerList = decodedData['data'];
-        return customerList.map((item) => Customer.fromJson(item)).toList();
+  // Consistent header management using the same PIN/Token logic
+  Future<Map<String, String>> _getHeaders() async {
+    final String? token = await _storage.getToken();
+    if (token == null) throw Exception("No token found");
+    return {
+      'Content-Type': 'application/json',
+      'X-API-KEY': ApiConstants.apiKey,
+      'Authorization': 'Bearer $token',
+    };
+  }
+
+  // GET: Fetch Customers for a shop
+  Future<List<Customer>> fetchCustomers(int shopId) async {
+    try {
+      final response = await http.get(
+        Uri.parse("$_cleanBaseUrl/customers/?shop_id=$shopId"),
+        headers: await _getHeaders(),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> body = jsonDecode(response.body);
+
+        // Match your API structure: { "error": false, "data": [...] }
+        if (body['error'] == false) {
+          final List<dynamic> customerList = body['data'] ?? [];
+          return customerList.map((json) => Customer.fromJson(json)).toList();
+        }
+        throw Exception(body['message'] ?? "Failed to fetch customers");
+      } else {
+        throw Exception("Server Error: ${response.statusCode}");
       }
-      throw Exception(decodedData['message']);
+    } catch (e) {
+      rethrow;
     }
-    throw Exception('Failed to fetch customers');
   }
 
   // POST: Create Customer
-  Future<Customer> createCustomer({
-    required String name,
-    required String phoneNumber,
-    required int shopId,
-  }) async {
-    final token = await _storage.getToken();
+  Future<Customer> addCustomer(Map<String, dynamic> customerData) async {
+    try {
+      final response = await http.post(
+        Uri.parse("$_cleanBaseUrl/customers/"),
+        headers: await _getHeaders(),
+        body: jsonEncode(customerData),
+      ).timeout(const Duration(seconds: 10));
 
-    final response = await http.post(
-      Uri.parse(baseUrl),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        "name": name,
-        "phone_number": phoneNumber,
-        "shop": shopId,
-      }),
-    );
+      final Map<String, dynamic> body = jsonDecode(response.body);
 
-    final Map<String, dynamic> decodedData = jsonDecode(response.body);
-
-    if (response.statusCode == 201 || (response.statusCode == 200 && decodedData['error'] == false)) {
-      // Return the newly created customer from the "data" field
-      return Customer.fromJson(decodedData['data']);
-    } else {
-      throw Exception(decodedData['message'] ?? 'Failed to create customer');
+      if (response.statusCode == 201 || (response.statusCode == 200 && body['error'] == false)) {
+        final dynamic data = body['data'] ?? body;
+        return Customer.fromJson(data);
+      } else {
+        throw Exception(body['message'] ?? "Error ${response.statusCode}");
+      }
+    } catch (e) {
+      rethrow;
     }
   }
-  Future<Customer> getCustomerById(int customerId) async {
-    final token = await _storage.getToken();
 
-    final response = await http.get(
-      Uri.parse('$baseUrl$customerId/'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
+  // GET: Fetch Single Customer
+  Future<Customer> fetchCustomerById(int customerId) async {
+    try {
+      final response = await http.get(
+        Uri.parse("$_cleanBaseUrl/customers/$customerId/"),
+        headers: await _getHeaders(),
+      ).timeout(const Duration(seconds: 10));
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> decodedData = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> body = jsonDecode(response.body);
+        final dynamic data = body['data'] ?? body;
+        return Customer.fromJson(data);
+      } else {
+        throw Exception("Customer not found");
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
 
+  // DELETE: Remove Customer
+  Future<void> deleteCustomer(int customerId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse("$_cleanBaseUrl/customers/$customerId/"),
+        headers: await _getHeaders(),
+      ).timeout(const Duration(seconds: 10));
 
-      return Customer.fromJson(decodedData);
-    } else if (response.statusCode == 404) {
-      throw Exception('Customer not found');
-    } else {
-      throw Exception('Failed to load customer details');
+      if (response.statusCode != 204 && response.statusCode != 200) {
+        throw Exception("Failed to delete customer (${response.statusCode})");
+      }
+    } catch (e) {
+      rethrow;
     }
   }
 }
