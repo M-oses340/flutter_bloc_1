@@ -9,6 +9,16 @@ class ShopDashboardScreen extends StatelessWidget {
   final Shop shop;
 
   const ShopDashboardScreen({super.key, required this.shop});
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return "Good Morning,";
+    } else if (hour < 17) {
+      return "Good Afternoon,";
+    } else {
+      return "Good Evening,";
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +37,7 @@ class ShopDashboardScreen extends StatelessWidget {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 Text(
-                  "Good Afternoon,",
+                  _getGreeting(),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
