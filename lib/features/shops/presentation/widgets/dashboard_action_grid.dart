@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../categories/presentation/screens/categories_screen.dart';
+import '../../../make_sales/bloc/make_sale_bloc.dart';
+import '../../../make_sales/bloc/make_sale_event.dart';
+import '../../../make_sales/data/repositories/make_sale_repository.dart';
+import '../../../make_sales/presentation/screens/make_sale_screen.dart';
 import '../../../products/presentation/screens/product_list_screen.dart';
 import '../../../expenses/presentation/screens/expense_list_screen.dart';
 import '../../../expenses/bloc/expense_bloc.dart';
@@ -114,7 +118,25 @@ class DashboardActionGrid extends StatelessWidget {
         },
       ),
 
-      _ActionItem(Icons.shopping_cart_checkout, "Make Sale", Colors.green),
+      _ActionItem(
+        Icons.shopping_cart_checkout,
+        "Make Sale",
+        Colors.green,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => BlocProvider(
+                // Provide the MakeSaleBloc and fetch products for the current shop immediately
+                create: (context) => MakeSaleBloc(
+                  MakeSaleRepository(),
+                )..add(FetchSaleProducts(shopId)),
+                child: MakeSaleScreen(shopId: shopId),
+              ),
+            ),
+          );
+        },
+      ),
       _ActionItem(Icons.credit_card, "Credit Sale", Colors.orange),
       _ActionItem(Icons.list_alt_rounded, "All Sales", Colors.indigo),
       _ActionItem(Icons.bar_chart_rounded, "Reports", Colors.deepPurple),
