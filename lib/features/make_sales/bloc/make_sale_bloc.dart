@@ -10,6 +10,7 @@ class MakeSaleBloc extends Bloc<MakeSaleEvent, MakeSaleState> {
   MakeSaleBloc(this.repository) : super(MakeSaleLoading()) {
     on<FetchSaleProducts>(_onFetchProducts);
     on<SearchSaleProducts>(_onSearchProducts);
+    on<AddProductToCart>(_onAddToCart);
   }
 
   Future<void> _onFetchProducts(FetchSaleProducts event, Emitter<MakeSaleState> emit) async {
@@ -19,6 +20,8 @@ class MakeSaleBloc extends Bloc<MakeSaleEvent, MakeSaleState> {
       emit(MakeSaleLoaded(
         allProducts: products,
         filteredProducts: products,
+        cartItems: [],
+        totalAmount: 0.0,
       ));
     } catch (e) {
       emit(MakeSaleError(e.toString()));
@@ -29,30 +32,38 @@ class MakeSaleBloc extends Bloc<MakeSaleEvent, MakeSaleState> {
     final currentState = state;
 
     if (currentState is MakeSaleLoaded) {
-      if (event.query.isEmpty) {
-        emit(MakeSaleLoaded(
-          allProducts: currentState.allProducts,
-          filteredProducts: currentState.allProducts,
-        ));
-      } else {
-        final query = event.query.toLowerCase();
+      final query = event.query.toLowerCase();
 
-        // 1. whereType<SaleProduct>() ensures the compiler knows items are non-null
-        // 2. We perform the check on the resulting non-null list
-        final filtered = currentState.allProducts.whereType<SaleProduct>().where((product) {
-          // Shadowing into local variables inside the loop to satisfy the analyzer
-          final String name = product.name;
-          final String sku = product.sku;
+      final filtered = query.isEmpty
+          ? currentState.allProducts
+          : currentState.allProducts.whereType<SaleProduct>().where((product) {
+        return product.name.toLowerCase().contains(query) ||
+            product.sku.toLowerCase().contains(query);
+      }).toList();
 
-          return name.toLowerCase().contains(query) ||
-              sku.toLowerCase().contains(query);
-        }).toList();
+      // Using copyWith preserves the current cartItems and totalAmount
+      emit(currentState.copyWith(filteredProducts: filtered));
+    }
+  }
 
-        emit(MakeSaleLoaded(
-          allProducts: currentState.allProducts,
-          filteredProducts: filtered,
-        ));
-      }
+  void _onAddToCart(AddProductToCart event, Emitter<MakeSaleState> emit) {
+    final currentState = state;
+    if (currentState is MakeSaleLoaded) {
+      // 1. Create a new list for the cart to ensure a new state reference
+      final updatedCart = List<SaleProduct>.from(currentState.cartItems)
+        ..add(event.product);
+
+      // 2. Calculate the total using the 'price' field from your SaleProduct model
+      final double newTotal = updatedCart.fold(
+        0.0,
+            (sum, item) => sum + item.price,
+      );
+
+      // 3. Emit updated state with the new cart and total
+      emit(currentState.copyWith(
+        cartItems: updatedCart,
+        totalAmount: newTotal,
+      ));
     }
   }
 }

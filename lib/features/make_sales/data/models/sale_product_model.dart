@@ -17,13 +17,12 @@ class SaleProduct {
 
   factory SaleProduct.fromJson(Map<String, dynamic> json) {
     return SaleProduct(
-      id: json['id'] ?? 0,
+      id: (json['id'] as num? ?? 0).toInt(),
       name: json['name'] ?? '',
       sku: json['sku'] ?? '',
-      // Ensures we handle both int and double from the API
-      price: (json['price'] is num) ? (json['price'] as num).toDouble() : 0.0,
-      stock: (json['stock'] is num) ? (json['stock'] as num).toDouble() : 0.0,
-      image: json['image'],
+      price: (json['selling_price'] as num? ?? 0).toDouble(),
+      stock: (json['remaining_quantity'] as num? ?? 0).toDouble(),
+      image: json['product_image'], // Matches your Product model key
     );
   }
 }
