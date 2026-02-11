@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// The top section: Search bar + Scan button
 class SaleSearchHeader extends StatelessWidget {
   final ValueChanged<String> onSearch;
   final VoidCallback onScanTap;
