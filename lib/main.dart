@@ -5,6 +5,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 // Core & Shared
 import 'core/theme/app_theme.dart';
 import 'core/utils/storage_service.dart';
+import 'features/make_sales/bloc/make_sale_bloc.dart';
+import 'features/make_sales/data/repositories/make_sale_repository.dart';
 import 'shared/widgets/app_lifecycle_wrapper.dart';
 
 // Auth Feature
@@ -23,9 +25,10 @@ import 'features/expenses/data/repositories/expense_repository.dart';
 import 'features/expenses/bloc/expense_bloc.dart';
 import 'features/shops/presentation/screens/home_screen.dart';
 
-// Customer Feature (NEW)
+// Customer Feature
 import 'features/customers/data/repositories/customer_repository.dart';
 import 'features/customers/bloc/customer_bloc.dart';
+
 
 void main() async {
   // Ensure Flutter engine is ready before calling native code/plugins
@@ -47,7 +50,9 @@ class MyApp extends StatelessWidget {
         RepositoryProvider(create: (_) => AuthRepository()),
         RepositoryProvider(create: (_) => StorageService()),
         RepositoryProvider(create: (_) => ExpenseRepository()),
-        RepositoryProvider(create: (_) => CustomerRepository()), // Added Customer Repo
+        RepositoryProvider(create: (_) => CustomerRepository()),
+        // ✅ Register MakeSale Repository
+        RepositoryProvider(create: (_) => MakeSaleRepository()),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -79,11 +84,21 @@ class MyApp extends StatelessWidget {
               repository: context.read<CustomerRepository>(),
             ),
           ),
+
+          // 5. MakeSaleBloc handles product fetching and searching for sales
+          // Note: We don't add an event here because we want to trigger
+          // FetchSaleProducts(shopId) only when the user enters a specific shop.
+          BlocProvider(
+            create: (context) => MakeSaleBloc(
+              context.read<MakeSaleRepository>(),
+            ),
+          ),
         ],
         child: AppLifecycleWrapper(
           child: MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'Shop App',
+            // Using your custom AppTheme constants
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: ThemeMode.system,
@@ -95,6 +110,7 @@ class MyApp extends StatelessWidget {
                 }
 
                 if (state is Locked) {
+                  // As requested: The PIN used here is the same as the login PIN
                   return PinLockScreen(email: state.email);
                 }
 
