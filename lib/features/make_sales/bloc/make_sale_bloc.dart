@@ -11,6 +11,9 @@ class MakeSaleBloc extends Bloc<MakeSaleEvent, MakeSaleState> {
     on<FetchSaleProducts>(_onFetchProducts);
     on<SearchSaleProducts>(_onSearchProducts);
     on<AddProductToCart>(_onAddToCart);
+    on<RemoveProductFromCart>(_onRemoveFromCart);
+    on<IncrementCartItem>(_onIncrement);
+    on<DecrementCartItem>(_onDecrement);
   }
 
   Future<void> _onFetchProducts(FetchSaleProducts event, Emitter<MakeSaleState> emit) async {
@@ -29,41 +32,78 @@ class MakeSaleBloc extends Bloc<MakeSaleEvent, MakeSaleState> {
   }
 
   void _onSearchProducts(SearchSaleProducts event, Emitter<MakeSaleState> emit) {
-    final currentState = state;
-
-    if (currentState is MakeSaleLoaded) {
+    if (state is MakeSaleLoaded) {
+      final currentState = state as MakeSaleLoaded;
       final query = event.query.toLowerCase();
 
       final filtered = query.isEmpty
           ? currentState.allProducts
-          : currentState.allProducts.whereType<SaleProduct>().where((product) {
+          : currentState.allProducts.where((product) {
         return product.name.toLowerCase().contains(query) ||
             product.sku.toLowerCase().contains(query);
       }).toList();
 
-      // Using copyWith preserves the current cartItems and totalAmount
       emit(currentState.copyWith(filteredProducts: filtered));
     }
   }
 
   void _onAddToCart(AddProductToCart event, Emitter<MakeSaleState> emit) {
-    final currentState = state;
-    if (currentState is MakeSaleLoaded) {
-      // 1. Create a new list for the cart to ensure a new state reference
-      final updatedCart = List<SaleProduct>.from(currentState.cartItems)
-        ..add(event.product);
+    if (state is MakeSaleLoaded) {
+      final currentState = state as MakeSaleLoaded;
+      final updatedCart = List<SaleProduct>.from(currentState.cartItems)..add(event.product);
 
-      // 2. Calculate the total using the 'price' field from your SaleProduct model
-      final double newTotal = updatedCart.fold(
-        0.0,
-            (sum, item) => sum + item.price,
-      );
-
-      // 3. Emit updated state with the new cart and total
       emit(currentState.copyWith(
         cartItems: updatedCart,
-        totalAmount: newTotal,
+        totalAmount: _calculateTotal(updatedCart),
       ));
     }
+  }
+
+  void _onRemoveFromCart(RemoveProductFromCart event, Emitter<MakeSaleState> emit) {
+    if (state is MakeSaleLoaded) {
+      final currentState = state as MakeSaleLoaded;
+      final updatedCart = currentState.cartItems.where((item) => item.id != event.productId).toList();
+
+      emit(currentState.copyWith(
+        cartItems: updatedCart,
+        totalAmount: _calculateTotal(updatedCart),
+      ));
+    }
+  }
+
+  void _onIncrement(IncrementCartItem event, Emitter<MakeSaleState> emit) {
+    if (state is MakeSaleLoaded) {
+      final currentState = state as MakeSaleLoaded;
+      // Find the product template from the master list
+      final product = currentState.allProducts.firstWhere((p) => p.id == event.productId);
+      final updatedCart = List<SaleProduct>.from(currentState.cartItems)..add(product);
+
+      emit(currentState.copyWith(
+        cartItems: updatedCart,
+        totalAmount: _calculateTotal(updatedCart),
+      ));
+    }
+  }
+
+  void _onDecrement(DecrementCartItem event, Emitter<MakeSaleState> emit) {
+    if (state is MakeSaleLoaded) {
+      final currentState = state as MakeSaleLoaded;
+      final updatedCart = List<SaleProduct>.from(currentState.cartItems);
+
+
+      final index = updatedCart.lastIndexWhere((item) => item.id == event.productId);
+      if (index != -1) {
+        updatedCart.removeAt(index);
+      }
+
+      emit(currentState.copyWith(
+        cartItems: updatedCart,
+        totalAmount: _calculateTotal(updatedCart),
+      ));
+    }
+  }
+
+  double _calculateTotal(List<SaleProduct> items) {
+    return items.fold(0.0, (sum, item) => sum + item.price);
   }
 }
