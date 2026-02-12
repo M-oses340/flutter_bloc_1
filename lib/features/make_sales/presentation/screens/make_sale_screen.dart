@@ -6,6 +6,8 @@ import '../../bloc/make_sale_event.dart';
 import '../../bloc/make_sale_state.dart';
 import '../widgets/sale_product_card.dart';
 import '../widgets/make_sale_widgets.dart';
+import 'cart_screen.dart';
+
 
 class MakeSaleScreen extends StatefulWidget {
   final int shopId;
@@ -59,7 +61,8 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                 // Scanner Overlay
                 Center(
                   child: Container(
-                    width: 280, height: 160,
+                    width: 280,
+                    height: 160,
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.teal, width: 3),
                       borderRadius: BorderRadius.circular(16),
@@ -68,7 +71,9 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                 ),
                 // Zoom Control
                 Positioned(
-                  bottom: 50, left: 0, right: 0,
+                  bottom: 50,
+                  left: 0,
+                  right: 0,
                   child: Center(
                     child: SegmentedButton<double>(
                       segments: const [
@@ -110,13 +115,14 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                 Expanded(
                   child: BlocBuilder<MakeSaleBloc, MakeSaleState>(
                     builder: (context, state) {
-                      if (state is MakeSaleLoading) return const Center(child: CircularProgressIndicator());
+                      if (state is MakeSaleLoading) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
                       if (state is MakeSaleLoaded) {
                         if (state.filteredProducts.isEmpty) {
                           return const Center(child: Text("No products found"));
                         }
                         return ListView.builder(
-                          // Fixed: EdgeInsets constructor fix
                           padding: const EdgeInsets.only(bottom: 120),
                           itemCount: state.filteredProducts.length,
                           itemBuilder: (context, index) {
@@ -135,9 +141,11 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
               ],
             ),
           ),
-          // Bottom Cart Bar
+          // Bottom Cart Bar with Navigation Logic
           Positioned(
-            bottom: 0, left: 0, right: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
             child: BlocBuilder<MakeSaleBloc, MakeSaleState>(
               builder: (context, state) {
                 if (state is MakeSaleLoaded && state.cartItems.isNotEmpty) {
@@ -145,7 +153,16 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                     itemCount: state.cartItems.length,
                     totalAmount: state.totalAmount,
                     onCheckout: () {
-                      // We can implement the PIN verification here later
+                      // Navigate to ShoppingCartScreen while sharing the same Bloc instance
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BlocProvider.value(
+                            value: context.read<MakeSaleBloc>(),
+                            child: const ShoppingCartScreen(),
+                          ),
+                        ),
+                      );
                     },
                   );
                 }
